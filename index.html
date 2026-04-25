@@ -290,20 +290,16 @@ body { overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background
   z-index: 5;
 }
 #char-stage .layer {
-  position: absolute; top: 30px; left: 0; right: 0; bottom: 0;
-  width: 100%; height: calc(100% - 30px);
-  object-fit: contain; object-position: 28% bottom;
-}
-#char-hint {
   position: absolute;
-  bottom: 38%; left: 50%;
-  transform: translateX(-50%);
-  text-align: center;
-  color: rgba(255, 200, 240, 0.75);
-  font-size: .8rem; line-height: 1.7;
-  pointer-events: none;
+  top: 3vh;
+  height: calc(100% - 3vh);
+  width: calc((100vh - 3vh) / 2);
+  left: calc(0.28 * (100% - (100vh - 3vh) / 2));
 }
-
+#char-stage.zoomed .layer {
+  transform: scale(1.6);
+  transform-origin: center top;
+}
 /* ── SCENE PANELS ── */
 .scene-panel {
   position: absolute;
@@ -698,9 +694,7 @@ body { overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background
   <!-- WORLD: background + character, scales fit-height -->
   <div id="world">
     <div id="bg"></div>
-    <div id="char-stage">
-      <div id="char-hint">✨<br>Go to Closet<br>to get dressed!</div>
-    </div>
+    <div id="char-stage"></div>
   </div>
 
   <!-- LEFT PANEL -->
@@ -1192,8 +1186,6 @@ function renderCharacter() {
   const stage = $('char-stage');
   stage.querySelectorAll('.layer').forEach(l => l.remove());
   const eq = getDisplayEquipped();
-  const hasClothing = [...eq].some(id => ITEMS.find(i => i.id === id && i.cat !== 'skin'));
-  $('char-hint').style.display = hasClothing ? 'none' : '';
 
   ITEMS.filter(i => eq.has(i.id))
     .sort((a, b) => a.z - b.z)
@@ -1603,6 +1595,9 @@ async function main() {
   $('bg').style.backgroundImage = "url('art/UI/room.png')";
   renderNav();
   renderCharacter();
+  $('char-stage').addEventListener('click', e => {
+    if (e.target.classList.contains('layer')) $('char-stage').classList.toggle('zoomed');
+  });
 
   if (S.name) {
     $('player-name').textContent = S.name;
