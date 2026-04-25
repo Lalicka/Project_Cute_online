@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://bv3leqlmdx4hc"
+path="res://.godot/imported/Cosmic Desires.mp3-61c9c979bd01ddc1854798c2e4979209.mp3str"
+
+[deps]
+
+source_file="res://Resources/Music/room/Cosmic Desires.mp3"
+dest_files=["res://.godot/imported/Cosmic Desires.mp3-61c9c979bd01ddc1854798c2e4979209.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

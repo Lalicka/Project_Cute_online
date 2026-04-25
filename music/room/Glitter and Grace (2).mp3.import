@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://b2bjumfqiuone"
+path="res://.godot/imported/Glitter and Grace (2).mp3-1d97bfca931da78a62d229a3053cea45.mp3str"
+
+[deps]
+
+source_file="res://Resources/Music/room/Glitter and Grace (2).mp3"
+dest_files=["res://.godot/imported/Glitter and Grace (2).mp3-1d97bfca931da78a62d229a3053cea45.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

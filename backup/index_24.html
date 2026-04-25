@@ -1,0 +1,1649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dress Up</title>
+<script src="config/clothes.js"></script>
+<script src="config/player.js"></script>
+<style>
+/* ── FONTS ── */
+@font-face {
+  font-family: 'MilkyNice';
+  src: url('fonts/MilkyNice.ttf') format('truetype');
+  font-weight: normal; font-style: normal;
+}
+
+/* ── RESET ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --lw: 166px;
+  --cw: 264px;
+  --world-w: calc(100vh * 16 / 9);
+  --world-left: max(0px, calc(50vw - 100vh * 8 / 9));
+  --panel-left: max(calc(100vh * 8 / 9), 50vw);
+  --panel: rgb(58, 12, 90);
+  --pill:  rgb(255, 245, 255);
+  --pill-border: rgb(200, 130, 220);
+  --btn:   #f7d8f0;
+  --btn-border: #b060c0;
+  --btn-active: #e08cd8;
+  --card:  #eeddf8;
+  --card-sel: #c8eeff;
+  --card-border: #c090d8;
+  --card-sel-border: #60b0e0;
+  --accent: #c2185b;
+  --text:  #660055;
+  --panel-bg: rgb(228, 205, 255);
+  --action-btn: #f4bede;
+  --action-border: #c050a0;
+}
+
+body { overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background: #1a001a; }
+
+/* ── GAME ── */
+#game { position: fixed; inset: 0; overflow: hidden; }
+
+/* ── WORLD (background + character, 16:9 anchored) ── */
+#world {
+  position: absolute;
+  left: var(--world-left);
+  top: 0; bottom: 0;
+  width: var(--world-w);
+  z-index: 1;
+  overflow: hidden;
+}
+
+#bg {
+  position: absolute; inset: 0;
+  background-size: cover; background-position: center;
+  transition: opacity 0.35s;
+}
+#bg.fade { opacity: 0; }
+
+/* ── LEFT PANEL ── */
+#left-panel {
+  position: absolute;
+  left: var(--world-left);
+  top: 0; bottom: 0;
+  width: var(--lw);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 13px 10px 12px;
+}
+
+/* ── CURRENCY ── */
+.currency-row { display: flex; flex-direction: column; gap: 6px; }
+
+.cpill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--pill);
+  border: 2px solid var(--pill-border);
+  border-radius: 24px;
+  padding: 5px 14px 5px 8px;
+  min-height: 40px;
+}
+.cpill img { width: 26px; height: 26px; object-fit: contain; flex-shrink: 0; }
+.cpill span { font-family: 'MilkyNice', cursive; font-size: 1.15rem; font-weight: 800; color: var(--text); letter-spacing: .5px; }
+
+/* ── MUSIC PLAYER ── */
+#music-player {
+  background: var(--pill);
+  border: 2px solid var(--pill-border);
+  border-radius: 16px;
+  padding: 8px 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+#music-header { display: flex; align-items: center; gap: 7px; }
+#music-vol-row { display: flex; align-items: center; gap: 7px; }
+
+#music-note {
+  font-size: .72rem; flex-shrink: 0; width: 16px; text-align: center;
+  display: inline-block; cursor: pointer;
+  animation: noteBop 1.5s ease-in-out infinite;
+}
+#music-note.paused { animation-play-state: paused; }
+@keyframes noteBop {
+  0%,100% { transform: rotate(-8deg) scale(1); }
+  50%      { transform: rotate(8deg) scale(1.15); }
+}
+
+#track-name {
+  font-size: .67rem; font-weight: 700; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;
+}
+#music-toggle-btn {
+  background: var(--btn);
+  border: 1.5px solid var(--btn-border);
+  border-radius: 8px;
+  font-size: .8rem; color: var(--text);
+  padding: 3px 8px; cursor: pointer; flex-shrink: 0;
+  transition: background .12s;
+  line-height: 1;
+}
+#music-toggle-btn:hover { background: var(--btn-active); }
+
+#vol-slider {
+  flex: 1; min-width: 0; height: 6px;
+  -webkit-appearance: none; appearance: none;
+  background: rgba(180, 80, 200, 0.25);
+  border-radius: 3px; cursor: pointer; outline: none;
+}
+#vol-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #f580c0, #b020a0);
+  border: 2px solid white;
+  box-shadow: 0 1px 4px rgba(0,0,0,.25);
+  cursor: pointer;
+}
+#vol-slider::-moz-range-thumb {
+  width: 16px; height: 16px; border-radius: 50%;
+  background: #c030b0; border: 2px solid white; cursor: pointer;
+}
+
+/* ── TIMER PANEL ── */
+#timer-panel.hidden { display: none; }
+#timer-panel {
+  background: rgba(80, 20, 120, 0.62);
+  border: 1.5px solid rgba(200, 140, 255, 0.75);
+  border-radius: 16px;
+  padding: 10px 9px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+
+#timer-section { display: flex; flex-direction: column; gap: 7px; }
+
+#sfx-vol-row {
+  display: flex; align-items: center; gap: 7px;
+}
+#sfx-vol-label {
+  font-size: .72rem; font-weight: 700; color: rgb(245, 200, 255);
+  flex-shrink: 0; width: 16px; text-align: center; cursor: pointer;
+}
+#sfx-vol-slider {
+  flex: 1; min-width: 0; height: 6px;
+  -webkit-appearance: none; appearance: none;
+  background: rgba(180, 80, 200, 0.25);
+  border-radius: 3px; cursor: pointer; outline: none;
+}
+#sfx-vol-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #d0a0ff, #8030c0);
+  border: 2px solid white;
+  box-shadow: 0 1px 4px rgba(0,0,0,.25);
+  cursor: pointer;
+}
+#sfx-vol-slider::-moz-range-thumb {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: #9040d0; border: 2px solid white; cursor: pointer;
+}
+
+#preset-row { display: flex; gap: 5px; }
+
+/* Tooltip wrapper */
+.tt-wrap {
+  position: relative;
+  flex: 1;
+}
+.tt-wrap .tt {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(40, 0, 60, 0.95);
+  color: #f5d0ff;
+  font-size: .63rem;
+  font-weight: 700;
+  line-height: 1.5;
+  border-radius: 8px;
+  padding: 5px 9px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .15s;
+  z-index: 100;
+  border: 1px solid rgba(200, 130, 240, 0.4);
+  box-shadow: 0 3px 10px rgba(80, 0, 120, 0.3);
+}
+.tt-wrap:hover .tt { opacity: 1; }
+.tt-wrap .preset-btn { width: 100%; }
+
+.preset-btn {
+  background: var(--btn);
+  border: 2px solid var(--btn-border);
+  border-radius: 12px;
+  font-family: 'Courier New', monospace;
+  font-size: .88rem; font-weight: 800; color: var(--text);
+  padding: 6px 2px; cursor: pointer;
+  transition: all .15s;
+}
+.preset-btn:hover { background: var(--btn-active); }
+.preset-btn.active {
+  background: var(--btn-active);
+  border-color: #8020a0;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,.15);
+  color: #1a001a;
+}
+.preset-btn:active { transform: scale(.94); }
+.preset-btn:disabled { opacity: .42; cursor: default; }
+.preset-btn:disabled:hover { background: var(--btn); }
+.preset-btn:disabled:active { transform: none; }
+
+#timer-display {
+  background: var(--pill);
+  border: 2px solid var(--pill-border);
+  border-radius: 14px;
+  text-align: center;
+  font-size: 1.7rem; font-weight: 800;
+  font-family: 'Courier New', monospace;
+  color: var(--text);
+  padding: 6px 4px;
+  letter-spacing: 3px;
+}
+
+#timer-toggle-btn {
+  background: var(--action-btn);
+  border: 2px solid var(--action-border);
+  border-radius: 24px;
+  font-family: 'MilkyNice', cursive;
+  font-size: 1.4rem; font-weight: 800; color: var(--text);
+  padding: 9px; cursor: pointer;
+  transition: all .15s;
+}
+#timer-toggle-btn:hover { filter: brightness(1.06); }
+#timer-toggle-btn:active { transform: scale(.96); }
+
+/* ── NAV ── */
+#nav-area {
+  margin-top: auto;
+  display: flex; flex-direction: column; gap: 7px;
+}
+
+.nav-btn {
+  background: var(--btn);
+  border: 2px solid var(--btn-border);
+  border-radius: 24px;
+  font-family: 'MilkyNice', cursive;
+  font-size: 1.3rem; font-weight: 800; color: var(--text);
+  padding: 10px 12px; cursor: pointer;
+  transition: all .15s; letter-spacing: .5px;
+}
+.nav-btn:hover { background: var(--btn-active); }
+.nav-btn:active { transform: scale(.97); }
+.nav-btn:disabled { opacity: .42; cursor: default; }
+.nav-btn:disabled:active { transform: none; }
+
+/* ── CHARACTER ── */
+#char-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+}
+#char-stage .layer {
+  position: absolute; top: 30px; left: 0; right: 0; bottom: 0;
+  width: 100%; height: calc(100% - 30px);
+  object-fit: contain; object-position: 28% bottom;
+}
+#char-hint {
+  position: absolute;
+  bottom: 38%; left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  color: rgba(255, 200, 240, 0.75);
+  font-size: .8rem; line-height: 1.7;
+  pointer-events: none;
+}
+
+/* ── SCENE PANELS ── */
+.scene-panel {
+  position: absolute;
+  left: var(--panel-left);
+  top: 14px; bottom: 62px;
+  width: min(492px, calc(100vw - var(--panel-left) - 16px));
+  z-index: 15;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity .22s, transform .22s;
+}
+.scene-panel.hidden {
+  opacity: 0; pointer-events: none; transform: scale(.97);
+}
+
+/* ── CLOSET ── */
+#closet-panel { flex-direction: row; }
+
+#cat-tabs {
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 14px 0 14px 0;
+  width: 48px; flex-shrink: 0;
+  overflow-y: auto;
+  position: relative; z-index: 2;
+}
+.cat-tab {
+  background: var(--btn-active);
+  border: 2px solid rgba(255, 255, 255, 0.52);
+  border-right: none;
+  border-radius: 10px 0 0 10px;
+  font-size: 1.2rem;
+  padding: 8px 4px; cursor: pointer;
+  text-align: center; line-height: 1;
+  transition: background .14s, filter .14s;
+  margin-right: -2px;
+}
+.cat-tab:hover { filter: brightness(1.1); }
+.cat-tab.active {
+  background: var(--panel-bg);
+  border-color: rgba(255, 255, 255, 0.85);
+  position: relative; z-index: 1;
+}
+.cat-tab:active { transform: scale(.94); }
+
+#closet-content {
+  flex: 1; display: flex; flex-direction: column;
+  overflow: hidden; padding: 10px 8px 10px 10px;
+  background: var(--panel-bg);
+  backdrop-filter: blur(10px);
+  border-radius: 22px;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 8px 32px rgba(80, 0, 120, 0.22);
+  position: relative; z-index: 1;
+}
+.grid-wrap {
+  flex: 1; min-height: 0;
+  overflow-x: hidden; overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+#closet-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px; align-content: start;
+}
+#closet-footer {
+  padding-top: 9px;
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+}
+#save-btn {
+  background: var(--action-btn);
+  border: 2px solid var(--action-border);
+  border-radius: 24px;
+  font-family: 'MilkyNice', cursive;
+  font-size: 1.5rem; font-weight: 800; color: var(--text);
+  padding: 9px 36px; cursor: pointer; min-height: 44px;
+  transition: all .15s;
+}
+#save-btn:hover { filter: brightness(1.06); }
+#save-btn:active { transform: scale(.96); }
+
+/* ── STORE ── */
+#store-panel { flex-direction: row; }
+
+#store-cat-tabs {
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 14px 0 14px 0;
+  width: 48px; flex-shrink: 0;
+  overflow-y: auto;
+  position: relative; z-index: 2;
+}
+
+#store-content {
+  flex: 1; display: flex; flex-direction: column;
+  overflow: hidden; padding: 10px 8px 10px 10px;
+  background: var(--panel-bg);
+  backdrop-filter: blur(10px);
+  border-radius: 22px;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 8px 32px rgba(80, 0, 120, 0.22);
+  position: relative; z-index: 1;
+}
+
+#store-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  align-content: start;
+}
+#store-footer {
+  padding-top: 9px;
+  display: flex; align-items: center; gap: 10px;
+  border-top: 1px solid rgba(180, 120, 210, 0.7);
+}
+#store-info-col { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+#store-info {
+  font-size: .76rem; font-weight: 600; color: var(--text);
+  line-height: 1.4;
+}
+#buy-btn {
+  background: var(--action-btn);
+  border: 2px solid var(--action-border);
+  border-radius: 24px;
+  font-family: 'MilkyNice', cursive;
+  font-size: 1.5rem; font-weight: 800; color: var(--text);
+  padding: 9px 26px; min-height: 44px; min-width: 108px; cursor: pointer;
+  transition: all .15s;
+}
+#buy-btn:hover:not(:disabled) { filter: brightness(1.06); }
+#buy-btn:active:not(:disabled) { transform: scale(.96); }
+#buy-btn:disabled { opacity: .45; cursor: default; }
+
+/* ── ITEM CARDS ── */
+.item-card {
+  background: var(--card);
+  border: 2px solid var(--card-border);
+  border-radius: 14px;
+  cursor: pointer; overflow: hidden;
+  display: flex; flex-direction: column;
+  align-items: center;
+  padding: 6px 5px 5px;
+  aspect-ratio: 3/4;
+  position: relative;
+  min-width: 0;
+  transition: transform .14s, filter .14s;
+}
+.item-card:hover { transform: scale(1.04); filter: brightness(1.05); }
+.item-card.selected {
+  background: var(--card-sel);
+  border-color: var(--card-sel-border);
+  box-shadow: 0 0 0 2px rgba(80, 170, 220, 0.3);
+}
+.item-card .thumb {
+  position: relative; width: 100%; flex: 1; min-height: 0;
+}
+.item-card .thumb img {
+  position: absolute; top: 0; left: 0;
+  width: 100%; height: 100%; object-fit: contain;
+}
+.item-card .card-lbl {
+  font-size: .6rem; font-weight: 700; color: var(--text);
+  text-align: center; padding: 2px 2px 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;
+}
+.item-card .card-price {
+  display: flex; align-items: center; justify-content: center;
+  gap: 3px; font-size: .68rem; font-weight: 800; color: var(--text);
+  padding: 2px 0;
+}
+.item-card .card-price img { width: 14px; height: 14px; object-fit: contain; }
+
+.badge {
+  position: absolute; top: 4px; right: 4px;
+  width: 18px; height: 18px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: white;
+}
+.badge-eq  { background: #c2185b; }
+.badge-own { background: #4caf50; }
+
+.empty-msg {
+  grid-column: 1 / -1;
+  text-align: center; color: rgba(80, 30, 100, 0.65);
+  font-size: .8rem; padding: 18px 10px; line-height: 1.7;
+}
+
+/* ── PANEL STATS ── */
+.panel-stats {
+  font-size: .68rem; font-weight: 600;
+  color: var(--text); opacity: .48;
+  text-align: left;
+}
+
+/* ── TOOLTIP ICONS ── */
+.tt img { width: 12px; height: 12px; object-fit: contain; vertical-align: middle; margin: 0 1px 1px 0; }
+
+/* ── INLINE CURRENCY ICON ── */
+.inline-icon { width: 14px; height: 14px; object-fit: contain; vertical-align: middle; margin-left: 2px; }
+
+/* ── BODY CARDS ── */
+.body-card {
+  background: var(--card);
+  border: 2px solid var(--card-border);
+  border-radius: 14px;
+  cursor: pointer; overflow: hidden;
+  display: flex; flex-direction: column;
+  align-items: center; padding: 4px 4px 5px;
+  aspect-ratio: 3/4; transition: transform .14s;
+}
+.body-card:hover { transform: scale(1.04); }
+.body-card.selected { background: var(--card-sel); border-color: var(--card-sel-border); }
+.body-card img { width: 100%; flex: 1; min-height: 0; object-fit: contain; }
+.body-card .card-lbl { font-size: .6rem; font-weight: 700; color: var(--text); padding: 2px 0 1px; }
+
+/* ── ALBUM CARDS ── */
+.album-card {
+  background: var(--card);
+  border: 2px solid var(--card-border);
+  border-radius: 14px;
+  display: flex; flex-direction: column;
+  align-items: center;
+  padding: 6px 5px 5px;
+  aspect-ratio: 3/4;
+  position: relative; overflow: hidden;
+  min-width: 0;
+  transition: transform .14s, filter .14s;
+  cursor: default;
+}
+.album-card.unlocked { cursor: pointer; }
+.album-card.unlocked:hover { transform: scale(1.04); filter: brightness(1.05); }
+.album-card.selected { background: var(--card-sel); border-color: var(--card-sel-border); box-shadow: 0 0 0 2px rgba(80,170,220,0.3); }
+.album-card.locked { filter: grayscale(0.6) brightness(0.82); }
+.album-card .thumb { position: relative; width: 100%; flex: 1; min-height: 0; }
+.album-card .thumb img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; }
+.album-card .card-lbl { font-size: .62rem; font-weight: 700; color: var(--text); text-align: center; padding: 2px 2px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
+.album-progress { font-size: .58rem; font-weight: 600; color: var(--text); opacity: .6; text-align: center; padding-bottom: 2px; }
+
+/* ── REWARD POPUP ── */
+#reward-popup {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%) scale(.5);
+  background: rgba(255, 242, 255, .97);
+  border: 3px solid rgba(200, 150, 230, .8);
+  border-radius: 22px;
+  padding: 22px 38px;
+  text-align: center;
+  z-index: 60;
+  box-shadow: 0 8px 40px rgba(120, 0, 160, .35);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform .35s cubic-bezier(.34,1.56,.64,1), opacity .22s;
+}
+#reward-popup.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+#reward-popup h3 { font-size: 1.25rem; color: var(--text); margin-bottom: 10px; }
+.reward-line {
+  display: flex; align-items: center; justify-content: center;
+  gap: 9px; font-size: 1.1rem; font-weight: 800; color: var(--text); margin: 4px 0;
+}
+.reward-line img { width: 28px; height: 28px; object-fit: contain; }
+
+
+/* ── SCROLLBARS ── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(180,100,220,.4); border-radius: 3px; }
+
+/* ── NAME PROMPT ── */
+#name-box { padding: 32px 36px 26px; text-align: center; min-width: 300px; max-width: 370px; }
+#name-title {
+  font-family: 'MilkyNice', cursive;
+  font-size: 1.9rem; font-weight: 800; color: var(--text); margin-bottom: 6px;
+}
+#name-subtitle { font-size: .82rem; color: var(--text); opacity: .65; margin-bottom: 20px; }
+#name-input {
+  width: 100%;
+  font-family: 'MilkyNice', cursive;
+  font-size: 1.1rem; font-weight: 700; color: var(--text);
+  background: var(--pill);
+  border: 2px solid var(--pill-border);
+  border-radius: 14px;
+  padding: 10px 16px; text-align: center; outline: none;
+  transition: border-color .15s; margin-bottom: 7px;
+  letter-spacing: .5px;
+}
+#name-input:focus { border-color: #9030c0; }
+#name-error {
+  font-size: .74rem; font-weight: 700; color: #cc0033;
+  min-height: 18px; margin-bottom: 14px;
+}
+#name-submit {
+  font-family: 'MilkyNice', cursive;
+  font-size: 1.4rem; font-weight: 800; color: var(--text);
+  background: var(--action-btn); border: 2px solid var(--action-border);
+  border-radius: 24px; padding: 10px 44px; cursor: pointer;
+  transition: all .15s;
+}
+#name-submit:hover { filter: brightness(1.06); }
+#name-submit:active { transform: scale(.96); }
+
+/* ── CONFIG FATAL ERROR ── */
+#config-error {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(20, 0, 30, 0.97);
+  display: flex; align-items: center; justify-content: center;
+}
+#config-error-box {
+  background: rgba(255, 240, 242, 0.97);
+  border: 3px solid #cc0033;
+  border-radius: 20px;
+  padding: 36px 48px;
+  text-align: center;
+  max-width: 440px;
+}
+#config-error-box h2 { color: #990022; font-size: 1.5rem; margin-bottom: 14px; }
+#config-error-box p  { color: #660033; font-size: .88rem; line-height: 1.8; margin: 3px 0; }
+#config-error-box code { background: rgba(200,0,50,.1); border-radius: 4px; padding: 1px 5px; font-size: .83rem; }
+
+/* ── PLAYER PANEL ── */
+#player-panel {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--pill);
+  border: 2px solid var(--pill-border);
+  border-radius: 20px;
+  padding: 5px 6px 5px 12px;
+  min-height: 38px;
+}
+#player-name {
+  flex: 1;
+  font-family: 'MilkyNice', cursive;
+  font-size: .78rem; font-weight: 700;
+  color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+#io-btn {
+  background: var(--btn); border: 1.5px solid var(--btn-border);
+  border-radius: 10px; width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .8rem; cursor: pointer; flex-shrink: 0;
+  transition: background .12s;
+}
+#io-btn:hover { background: var(--btn-active); }
+
+/* ── MODALS ── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 800;
+  background: rgba(20, 0, 35, 0.72);
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(3px);
+}
+.modal-box {
+  background: var(--panel-bg);
+  border: 2px solid rgba(255,255,255,0.52);
+  border-radius: 22px;
+  box-shadow: 0 8px 40px rgba(80,0,120,.3);
+  position: relative;
+}
+
+/* IO modal */
+#io-box { padding: 22px 22px 16px; min-width: 258px; }
+#io-title {
+  font-size: 1.05rem; font-weight: 800; color: var(--text);
+  text-align: center; margin-bottom: 14px;
+}
+.io-opt {
+  display: flex; align-items: center; gap: 11px; width: 100%;
+  background: var(--btn); border: 2px solid var(--btn-border);
+  border-radius: 14px; padding: 10px 13px; cursor: pointer;
+  text-align: left; margin-bottom: 8px; transition: background .13s;
+}
+.io-opt:hover { background: var(--btn-active); }
+.io-opt:last-child { margin-bottom: 0; }
+.io-opt-icon { font-size: 1.25rem; flex-shrink: 0; }
+.io-opt strong { display: block; font-size: .86rem; font-weight: 800; color: var(--text); }
+.io-opt small   { font-size: .68rem; color: var(--text); opacity: .6; }
+#io-close-btn {
+  position: absolute; top: 11px; right: 13px;
+  background: none; border: none; font-size: 1rem;
+  color: var(--text); opacity: .45; cursor: pointer; line-height: 1;
+}
+#io-close-btn:hover { opacity: .9; }
+
+/* Import confirm */
+#ic-box { padding: 28px 30px 22px; max-width: 330px; text-align: center; }
+#ic-title { font-size: 1.1rem; font-weight: 800; color: var(--text); margin-bottom: 10px; }
+#ic-text  { font-size: .81rem; color: var(--text); opacity: .72; line-height: 1.65; margin-bottom: 20px; }
+#ic-buttons { display: flex; gap: 10px; justify-content: center; }
+.ic-btn {
+  border-radius: 18px; font-weight: 700; font-size: .86rem;
+  padding: 9px 22px; cursor: pointer; border: 2px solid; transition: all .13s;
+}
+.ic-cancel  { background: var(--btn); border-color: var(--btn-border); color: var(--text); }
+.ic-cancel:hover  { background: var(--btn-active); }
+.ic-confirm { background: #d42060; border-color: #a01050; color: white; }
+.ic-confirm:hover { filter: brightness(1.1); }
+</style>
+</head>
+<body>
+<div id="game">
+
+  <!-- WORLD: background + character, scales fit-height -->
+  <div id="world">
+    <div id="bg"></div>
+    <div id="char-stage">
+      <div id="char-hint">✨<br>Go to Closet<br>to get dressed!</div>
+    </div>
+  </div>
+
+  <!-- LEFT PANEL -->
+  <div id="left-panel">
+    <div id="player-panel">
+      <span id="player-name">Player</span>
+      <button id="io-btn" title="Import / Export save" onclick="openIOModal()">💾</button>
+    </div>
+
+    <div class="currency-row">
+      <div class="cpill">
+        <img src="art/UI/ame164.png" alt="amethyst">
+        <span id="ame-count">0</span>
+      </div>
+      <div class="cpill">
+        <img src="art/UI/qua164.png" alt="quartz">
+        <span id="qua-count">50</span>
+      </div>
+    </div>
+
+    <div id="music-player">
+      <div id="music-header">
+        <span id="track-name">♪ …</span>
+      </div>
+      <div id="music-vol-row">
+        <span id="music-note" onclick="toggleMusic()">🎵</span>
+        <input type="range" id="vol-slider" min="0" max="1" step="0.05" value="0.15">
+      </div>
+    </div>
+
+    <div id="timer-panel">
+      <div id="timer-section">
+        <div id="preset-row">
+          <div class="tt-wrap">
+            <button class="preset-btn" data-mins="25">25</button>
+            <div class="tt">+<img src="art/UI/qua164.png">10<br>+<img src="art/UI/ame164.png">1</div>
+          </div>
+          <div class="tt-wrap">
+            <button class="preset-btn" data-mins="5">5</button>
+            <div class="tt">+<img src="art/UI/qua164.png">2</div>
+          </div>
+          <div class="tt-wrap">
+            <button class="preset-btn" data-mins="10">10</button>
+            <div class="tt">+<img src="art/UI/qua164.png">5</div>
+          </div>
+        </div>
+        <div id="timer-display">25:00</div>
+        <button id="timer-toggle-btn">Start</button>
+      </div>
+      <div id="sfx-vol-row">
+        <span id="sfx-vol-label" onclick="previewSfx()">🔔</span>
+        <input type="range" id="sfx-vol-slider" min="0" max="1" step="0.05" value="0.5">
+      </div>
+    </div>
+
+    <div id="nav-area"></div>
+  </div>
+
+  <!-- CLOSET -->
+  <div id="closet-panel" class="scene-panel hidden">
+    <div id="cat-tabs"></div>
+    <div id="closet-content">
+      <div class="grid-wrap"><div id="closet-grid"></div></div>
+      <div id="closet-footer">
+        <button id="save-btn">Save</button>
+        <div class="panel-stats" id="closet-stats" style="width:100%;text-align:left"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STORE -->
+  <div id="store-panel" class="scene-panel hidden">
+    <div id="store-cat-tabs"></div>
+    <div id="store-content">
+      <div class="grid-wrap"><div id="store-grid"></div></div>
+      <div id="store-footer">
+        <div id="store-info-col">
+          <div id="store-info">Select an item to buy</div>
+          <div class="panel-stats" id="store-stats"></div>
+        </div>
+        <button id="buy-btn" disabled>Buy</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- REWARD -->
+  <div id="reward-popup">
+    <h3>⏰ Time's up!</h3>
+    <div id="reward-lines"></div>
+  </div>
+
+
+  <!-- FATAL: clothes.json missing -->
+  <div id="config-error" style="display:none">
+    <div id="config-error-box">
+      <h2>⚠️ Config missing</h2>
+      <p><code>config/clothes.json</code> was not found.</p>
+      <p>Place it next to <code>index.html</code> and reload.</p>
+    </div>
+  </div>
+
+  <!-- IMPORT / EXPORT -->
+  <div id="io-modal" class="modal-overlay" style="display:none">
+    <div id="io-box" class="modal-box">
+      <button id="io-close-btn" onclick="closeIOModal()">✕</button>
+      <div id="io-title">Save Data</div>
+      <button class="io-opt" onclick="exportPlayer()">
+        <span class="io-opt-icon">📤</span>
+        <span><strong>Export</strong><small>Download progress as player.js</small></span>
+      </button>
+      <button class="io-opt" onclick="importPlayer()">
+        <span class="io-opt-icon">📥</span>
+        <span><strong>Import</strong><small>Load progress from a player.js file</small></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- NAME PROMPT -->
+  <div id="name-prompt" class="modal-overlay" style="display:none">
+    <div id="name-box" class="modal-box">
+      <div id="name-title">Hello!</div>
+      <div id="name-subtitle">Choose your player name<br><small style="font-size:.7rem;opacity:.8">English letters &amp; numbers · 3–15 characters</small></div>
+      <input type="text" id="name-input" maxlength="15" placeholder="YourName123"
+             autocomplete="off" spellcheck="false"
+             onkeydown="if(event.key==='Enter')submitName()">
+      <div id="name-error"></div>
+      <button id="name-submit" onclick="submitName()">Start</button>
+    </div>
+  </div>
+
+  <!-- IMPORT CONFIRM -->
+  <div id="import-confirm" class="modal-overlay" style="display:none">
+    <div id="ic-box" class="modal-box">
+      <div id="ic-title">⚠️ Are you sure?</div>
+      <div id="ic-text">This will overwrite your current progress with the imported save file. This cannot be undone.</div>
+      <div id="ic-buttons">
+        <button class="ic-btn ic-cancel" onclick="cancelImport()">Cancel</button>
+        <button class="ic-btn ic-confirm" onclick="confirmImport()">Yes, overwrite</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<audio id="bgm"></audio>
+<audio id="sfx"></audio>
+
+<script>
+/* ═══════════════════════════════════════════
+   DATA (populated from config/clothes.json)
+═══════════════════════════════════════════ */
+let CATEGORIES  = [];
+let ITEMS       = [];
+let OUTFITS     = {};
+let STARTERS    = [];
+let TOTAL_ITEMS = 0;
+
+const TIMER_REWARDS = { 5:{q:2,a:0}, 10:{q:5,a:0}, 25:{q:10,a:1} };
+
+const CAT_EMOJI = {
+  body: '🧍', face: '😊', hair: '💇', dress: '👗',
+  top: '👚', pants: '👖', coat: '🧥', shoes: '👟', acc: '💎'
+};
+const NAV_EMOJI = { room: '🏠', closet: '👗', store: '🛍️' };
+
+const PLAYLISTS = {
+  room: [
+    'music/room/Cotton Candy Skies (1).mp3',
+    'music/room/Amethyst Dance.mp3',
+    'music/room/Crystal Glow.mp3',
+    'music/room/Glitter and Grace.mp3',
+    'music/room/Sakura Girl.mp3',
+    'music/room/Pink Fabric Dream.mp3',
+    'music/room/Cute Pink Dress.mp3',
+    'music/room/Dreamy Anime Girl.mp3',
+    'music/room/Diamonds in the Air.mp3',
+    'music/room/Project Cute (1).mp3',
+    'music/room/Quartz Stars.mp3',
+    'music/room/Amethyst Shimmer (1).mp3',
+  ],
+  store: [
+    'music/store/Cosmic Threads.mp3',
+    'music/store/Starlit Stiches.mp3',
+    'music/store/Bubble Bath Blues.mp3',
+    'music/store/Starlit Stiches (1).mp3',
+  ],
+};
+
+/* ═══════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════ */
+const S = {
+  scene: 'room',
+  q: 50, a: 0,
+  owned: new Set(),
+  equipped: {},
+  draft: {},
+  body: 1,
+  draftBody: 1,
+  timerPreset: 25,
+  timerRunning: false,
+  timerSecs: 25 * 60,
+  timerInterval: null,
+  storeSelected: null,
+  closetCat: 'body',
+  storeCat: 'face',
+  musicList: 'room',
+  musicIdx: 0,
+  musicPlaying: false,
+  name: '',
+};
+
+/* ═══════════════════════════════════════════
+   PERSISTENCE — localStorage
+═══════════════════════════════════════════ */
+const LS = { q:'dg2_q', a:'dg2_a', owned:'dg2_own', eq:'dg2_eq', body:'dg2_body', name:'dg2_name' };
+
+function persist() {
+  try {
+    localStorage.setItem(LS.q, S.q);
+    localStorage.setItem(LS.a, S.a);
+    localStorage.setItem(LS.owned, JSON.stringify([...S.owned]));
+    localStorage.setItem(LS.body, S.body);
+    localStorage.setItem(LS.name, S.name);
+    const obj = {};
+    for (const [cat, set] of Object.entries(S.equipped)) obj[cat] = [...set];
+    localStorage.setItem(LS.eq, JSON.stringify(obj));
+  } catch(_) {}
+}
+
+function loadState() {
+  try {
+    const q = localStorage.getItem(LS.q); if (q != null) S.q = +q;
+    const a = localStorage.getItem(LS.a); if (a != null) S.a = +a;
+    const own = localStorage.getItem(LS.owned); if (own) S.owned = new Set(JSON.parse(own));
+    const body = localStorage.getItem(LS.body); if (body) { S.body = +body; S.draftBody = S.body; }
+    const eq = localStorage.getItem(LS.eq);
+    if (eq) {
+      const obj = JSON.parse(eq);
+      for (const [cat, arr] of Object.entries(obj)) if (S.equipped[cat]) S.equipped[cat] = new Set(arr);
+    }
+    if (S.equipped.face.size === 0) {
+      const fb = STARTERS.find(id => ITEMS.find(i => i.id === id && i.cat === 'face'));
+      if (fb) S.equipped.face.add(fb);
+    }
+    const name = localStorage.getItem(LS.name); if (name) S.name = name;
+  } catch(_) {}
+}
+
+/* ── Import / Export ── */
+let pendingImportData = null;
+
+function openIOModal()  { $('io-modal').style.display = 'flex'; }
+function closeIOModal() { $('io-modal').style.display = 'none'; }
+
+function exportPlayer() {
+  const data = {
+    name: S.name,
+    q: S.q, a: S.a,
+    owned: [...S.owned],
+    equipped: Object.fromEntries(Object.entries(S.equipped).map(([k, v]) => [k, [...v]])),
+    body: S.body,
+  };
+  const blob = new Blob(
+    ['window.PLAYER_CONFIG = ' + JSON.stringify(data, null, 2) + ';\n'],
+    { type: 'text/javascript' }
+  );
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'player.js';
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  closeIOModal();
+}
+
+function importPlayer() {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = '.js,.json';
+  input.onchange = e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const text = ev.target.result.trim();
+        let cfg;
+        if (text.startsWith('{')) {
+          cfg = JSON.parse(text);
+        } else {
+          const m = text.match(/window\.PLAYER_CONFIG\s*=\s*(\{[\s\S]*\})\s*;?\s*$/);
+          if (!m) throw new Error('invalid');
+          cfg = JSON.parse(m[1]);
+        }
+        pendingImportData = cfg;
+        closeIOModal();
+        $('import-confirm').style.display = 'flex';
+      } catch(_) { alert('Could not read save file.'); }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+function confirmImport() {
+  if (!pendingImportData) return;
+  applyPlayerConfig(pendingImportData);
+  persist();
+  pendingImportData = null;
+  $('import-confirm').style.display = 'none';
+  $('player-name').textContent = S.name || '—';
+  updateCurrency();
+  renderCharacter();
+  if (S.scene === 'closet') { initDraft(); renderClosetGrid(S.closetCat); }
+  else if (S.scene === 'store') { renderStoreGrid(S.storeCat); updateStoreFooter(); }
+}
+
+/* ── Name prompt ── */
+function submitName() {
+  const val = $('name-input').value.trim();
+  const err = $('name-error');
+  if (!/^[a-zA-Z0-9]{3,15}$/.test(val)) {
+    err.textContent = val.length < 3 ? 'At least 3 characters required.'
+      : val.length > 15 ? 'Maximum 15 characters.'
+      : 'Only English letters and numbers allowed.';
+    return;
+  }
+  S.name = val;
+  persist();
+  $('name-prompt').style.display = 'none';
+  $('player-name').textContent = S.name;
+}
+
+function cancelImport() {
+  pendingImportData = null;
+  $('import-confirm').style.display = 'none';
+}
+
+/* ═══════════════════════════════════════════
+   CONFIG
+═══════════════════════════════════════════ */
+function applyClothesConfig(cfg) {
+  CATEGORIES  = cfg.categories;
+  ITEMS       = cfg.items;
+  OUTFITS     = cfg.outfits;
+  STARTERS    = cfg.starters;
+  TOTAL_ITEMS = cfg.items.length;
+}
+
+function updateStats() {
+  const txt = `${S.owned.size} / ${TOTAL_ITEMS} items owned`;
+  const cs = $('closet-stats'), ss = $('store-stats');
+  if (cs) cs.textContent = txt;
+  if (ss) ss.textContent = txt;
+}
+
+function applyDefaultState() {
+  S.q = 50; S.a = 0;
+  S.owned = new Set(STARTERS);
+  CATEGORIES.forEach(c => { S.equipped[c.id] = new Set(); S.draft[c.id] = new Set(); });
+  const sf = STARTERS.find(id => ITEMS.find(i => i.id === id && i.cat === 'face'));
+  const sh = STARTERS.find(id => ITEMS.find(i => i.id === id && i.cat === 'hair'));
+  if (sf) S.equipped.face.add(sf);
+  if (sh) S.equipped.hair.add(sh);
+  S.body = 1; S.draftBody = 1;
+  S.name = '';
+}
+
+function applyPlayerConfig(cfg) {
+  S.q = cfg.q ?? 50;
+  S.a = cfg.a ?? 0;
+  S.owned = new Set(cfg.owned ?? STARTERS);
+  CATEGORIES.forEach(c => { S.equipped[c.id] = new Set(); S.draft[c.id] = new Set(); });
+  if (cfg.equipped) {
+    for (const [cat, arr] of Object.entries(cfg.equipped)) {
+      if (S.equipped[cat]) S.equipped[cat] = new Set(arr);
+    }
+  }
+  S.body = cfg.body ?? 1;
+  S.draftBody = S.body;
+  S.name = cfg.name ?? '';
+  if (S.equipped.face.size === 0) {
+    const fb = STARTERS.find(id => ITEMS.find(i => i.id === id && i.cat === 'face'));
+    if (fb) S.equipped.face.add(fb);
+  }
+}
+
+/* ═══════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════ */
+const $ = id => document.getElementById(id);
+const enc = p => p.split('/').map(encodeURIComponent).join('/');
+
+function allEquippedFrom(eq) {
+  const s = new Set();
+  Object.values(eq).forEach(set => set.forEach(id => s.add(id)));
+  return s;
+}
+
+function allEquipped() { return allEquippedFrom(S.equipped); }
+
+function initDraft() {
+  CATEGORIES.forEach(c => { S.draft[c.id] = new Set(S.equipped[c.id]); });
+  S.draftBody = S.body;
+}
+
+function getDisplayEquipped() {
+  if (S.scene === 'closet') return allEquippedFrom(S.draft);
+  const base = allEquippedFrom(S.equipped);
+  if (S.scene === 'store' && S.storeSelected) {
+    const preview = ITEMS.find(i => i.id === S.storeSelected);
+    if (preview) {
+      const cat = CATEGORIES.find(c => c.id === preview.cat);
+      if (!cat.multi) S.equipped[preview.cat].forEach(id => base.delete(id));
+      base.add(preview.id);
+    }
+  }
+  return base;
+}
+
+function updateCurrency() {
+  $('ame-count').textContent = S.a;
+  $('qua-count').textContent = S.q;
+}
+
+/* ═══════════════════════════════════════════
+   SCENES
+═══════════════════════════════════════════ */
+function showScene(scene) {
+  const wasStore = S.scene === 'store';
+  S.scene = scene;
+
+  $('bg').style.backgroundImage = scene === 'store'
+    ? "url('art/UI/store.png')"
+    : "url('art/UI/room.png')";
+
+  $('closet-panel').classList.toggle('hidden', scene !== 'closet');
+  $('store-panel').classList.toggle('hidden',  scene !== 'store');
+  $('timer-panel').classList.toggle('hidden', scene !== 'room');
+
+  const nowStore = scene === 'store';
+  if (wasStore !== nowStore) {
+    const newList = nowStore ? 'store' : 'room';
+    if (S.musicPlaying) startMusic(newList);
+    else S.musicList = newList;
+  }
+
+  renderNav();
+
+  if (scene === 'closet') {
+    initDraft();
+    renderClosetTabs();
+    renderClosetGrid(S.closetCat);
+    updateStats();
+  } else if (scene === 'store') {
+    S.storeSelected = null;
+    renderStoreTabs();
+    renderStoreGrid(S.storeCat);
+    updateStoreFooter();
+    updateStats();
+  }
+  renderCharacter();
+}
+
+function renderNav() {
+  const nav = $('nav-area');
+  nav.innerHTML = '';
+  const mk = (label, target) => {
+    const b = document.createElement('button');
+    b.className = 'nav-btn';
+    b.textContent = (NAV_EMOJI[target] || '') + ' ' + label;
+    b.disabled = S.timerRunning;
+    b.onclick = () => showScene(target);
+    nav.appendChild(b);
+  };
+  if (S.scene === 'room') {
+    mk('Closet', 'closet');
+    mk('Store',  'store');
+  } else {
+    mk('Room', 'room');
+  }
+}
+
+/* ═══════════════════════════════════════════
+   CHARACTER
+═══════════════════════════════════════════ */
+function renderCharacter() {
+  const stage = $('char-stage');
+  stage.querySelectorAll('.layer').forEach(l => l.remove());
+  const eq = getDisplayEquipped();
+  $('char-hint').style.display = eq.size === 0 ? '' : 'none';
+
+  const bodyImg = document.createElement('img');
+  bodyImg.className = 'layer';
+  bodyImg.src = `art/Body${S.scene === 'closet' ? S.draftBody : S.body}.png`;
+  bodyImg.style.zIndex = '1';
+  stage.appendChild(bodyImg);
+
+  ITEMS.filter(i => eq.has(i.id))
+    .sort((a, b) => a.z - b.z)
+    .forEach(item => {
+      const img = document.createElement('img');
+      img.className = 'layer';
+      img.src = `art/${item.id}.png`;
+      img.style.zIndex = String(item.z);
+      stage.appendChild(img);
+    });
+}
+
+/* ═══════════════════════════════════════════
+   CLOSET
+═══════════════════════════════════════════ */
+function renderClosetTabs() {
+  const tabs = $('cat-tabs');
+  tabs.innerHTML = '';
+  CATEGORIES.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'cat-tab' + (cat.id === S.closetCat ? ' active' : '');
+    btn.textContent = CAT_EMOJI[cat.id] || cat.label;
+    btn.onclick = () => {
+      S.closetCat = cat.id;
+      renderClosetTabs();
+      renderClosetGrid(cat.id);
+    };
+    tabs.appendChild(btn);
+  });
+  const albumBtn = document.createElement('button');
+  albumBtn.className = 'cat-tab' + (S.closetCat === 'album' ? ' active' : '');
+  albumBtn.textContent = '📖';
+  albumBtn.title = 'Album';
+  albumBtn.onclick = () => {
+    S.closetCat = 'album';
+    renderClosetTabs();
+    renderClosetGrid('album');
+  };
+  tabs.appendChild(albumBtn);
+}
+
+function renderClosetGrid(catId) {
+  const grid = $('closet-grid');
+  grid.innerHTML = '';
+
+  if (catId === 'album') { renderAlbumGrid(); return; }
+
+  if (catId === 'body') {
+    for (let i = 1; i <= 5; i++) {
+      const card = document.createElement('div');
+      card.className = 'body-card' + (S.draftBody === i ? ' selected' : '');
+      const img = document.createElement('img');
+      img.src = `art/Body${i}.png`;
+      const lbl = document.createElement('div');
+      lbl.className = 'card-lbl';
+      lbl.textContent = `Body ${i}`;
+      card.appendChild(img); card.appendChild(lbl);
+      card.onclick = () => {
+        S.draftBody = i;
+        renderCharacter(); renderClosetGrid('body');
+      };
+      grid.appendChild(card);
+    }
+    return;
+  }
+
+  const ownedInCat = ITEMS.filter(i => i.cat === catId && S.owned.has(i.id));
+  if (ownedInCat.length === 0) {
+    const msg = document.createElement('div');
+    msg.className = 'empty-msg';
+    msg.textContent = '✨ Visit the Store to unlock items for this category!';
+    grid.appendChild(msg);
+    return;
+  }
+
+  ownedInCat.forEach(item => {
+    const isEq = S.draft[item.cat]?.has(item.id);
+    const card = document.createElement('div');
+    card.className = 'item-card' + (isEq ? ' selected' : '');
+
+    if (isEq) {
+      const b = document.createElement('div');
+      b.className = 'badge badge-eq'; b.textContent = '✓';
+      card.appendChild(b);
+    }
+
+    const thumb = document.createElement('div'); thumb.className = 'thumb';
+    const bg = document.createElement('img');
+    bg.src = `art/Body${S.draftBody}.png`; bg.alt = '';
+    const ii = document.createElement('img');
+    ii.src = `art/${item.id}.png`;
+    thumb.appendChild(bg); thumb.appendChild(ii);
+
+    const lbl = document.createElement('div');
+    lbl.className = 'card-lbl'; lbl.textContent = item.outfit;
+
+    card.appendChild(thumb); card.appendChild(lbl);
+    card.onclick = () => toggleEquip(item);
+    grid.appendChild(card);
+  });
+}
+
+function toggleEquip(item) {
+  const cat = CATEGORIES.find(c => c.id === item.cat);
+  const set = S.draft[item.cat];
+  if (set.has(item.id)) {
+    if (item.cat === 'face') return; // face can only be swapped, never removed
+    set.delete(item.id);
+  } else {
+    if (!cat.multi) set.clear();
+    set.add(item.id);
+  }
+  renderCharacter();
+  renderClosetGrid(S.closetCat);
+}
+
+function saveOutfit() {
+  CATEGORIES.forEach(c => { S.equipped[c.id] = new Set(S.draft[c.id]); });
+  S.body = S.draftBody;
+  persist();
+}
+
+function renderAlbumGrid() {
+  const grid = $('closet-grid');
+  grid.innerHTML = '';
+  for (const [name, itemIds] of Object.entries(OUTFITS)) {
+    const allOwned = itemIds.every(id => S.owned.has(id));
+
+    const card = document.createElement('div');
+    card.className = 'album-card' + (allOwned ? ' unlocked' : ' locked');
+
+    const thumb = document.createElement('div'); thumb.className = 'thumb';
+    const bodyImg = document.createElement('img');
+    bodyImg.src = `art/Body${S.draftBody}.png`;
+    bodyImg.style.zIndex = '0';
+    thumb.appendChild(bodyImg);
+    ITEMS.filter(i => itemIds.includes(i.id))
+      .sort((a, b) => a.z - b.z)
+      .forEach(item => {
+        const img = document.createElement('img');
+        img.src = `art/${item.id}.png`;
+        img.style.zIndex = String(item.z);
+        thumb.appendChild(img);
+      });
+
+    const lbl = document.createElement('div');
+    lbl.className = 'card-lbl'; lbl.textContent = name;
+
+    const ownedCount = itemIds.filter(id => S.owned.has(id)).length;
+    const prog = document.createElement('div');
+    prog.className = 'album-progress';
+    prog.textContent = allOwned ? '✓ Complete' : `${ownedCount} / ${itemIds.length}`;
+
+    card.appendChild(thumb); card.appendChild(lbl); card.appendChild(prog);
+    if (allOwned) card.onclick = () => equipAlbumOutfit(name);
+    grid.appendChild(card);
+  }
+}
+
+function equipAlbumOutfit(name) {
+  const itemIds = OUTFITS[name];
+  if (!itemIds || !itemIds.every(id => S.owned.has(id))) return;
+  const outfitCats = new Set(
+    itemIds.map(id => ITEMS.find(i => i.id === id)?.cat).filter(Boolean)
+  );
+  CATEGORIES.forEach(c => {
+    if ((c.id === 'face' || c.id === 'hair') && !outfitCats.has(c.id)) return;
+    S.draft[c.id] = new Set();
+  });
+  itemIds.forEach(id => {
+    const item = ITEMS.find(i => i.id === id);
+    if (item) S.draft[item.cat].add(id);
+  });
+  renderCharacter();
+  renderAlbumGrid();
+}
+
+/* ═══════════════════════════════════════════
+   STORE
+═══════════════════════════════════════════ */
+function renderStoreTabs() {
+  const tabs = $('store-cat-tabs');
+  tabs.innerHTML = '';
+  CATEGORIES.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'cat-tab' + (cat.id === S.storeCat ? ' active' : '');
+    btn.textContent = CAT_EMOJI[cat.id] || cat.label;
+    btn.onclick = () => {
+      S.storeCat = cat.id;
+      S.storeSelected = null;
+      renderStoreTabs();
+      renderStoreGrid(S.storeCat);
+      updateStoreFooter();
+      renderCharacter();
+    };
+    tabs.appendChild(btn);
+  });
+}
+
+function renderStoreGrid(catId) {
+  const grid = $('store-grid');
+  grid.innerHTML = '';
+
+  if (catId === 'body') {
+    const msg = document.createElement('div');
+    msg.className = 'empty-msg';
+    msg.textContent = '✨ Body types are free — change them in the Closet!';
+    grid.appendChild(msg);
+    return;
+  }
+
+  const avail = ITEMS.filter(i => i.cat === catId && !S.owned.has(i.id));
+
+  if (avail.length === 0) {
+    const msg = document.createElement('div');
+    msg.className = 'empty-msg';
+    msg.textContent = '✨ You own everything in this category!';
+    grid.appendChild(msg);
+    return;
+  }
+
+  avail.forEach(item => {
+    const sel = S.storeSelected === item.id;
+    const card = document.createElement('div');
+    card.className = 'item-card' + (sel ? ' selected' : '');
+
+    const thumb = document.createElement('div'); thumb.className = 'thumb';
+    const bg = document.createElement('img'); bg.src = `art/Body${S.body}.png`; bg.alt = '';
+    const ii = document.createElement('img'); ii.src = `art/${item.id}.png`;
+    thumb.appendChild(bg); thumb.appendChild(ii);
+
+    const lbl = document.createElement('div');
+    lbl.className = 'card-lbl'; lbl.textContent = item.outfit;
+
+    const priceAmt = item.price.a ?? item.price.q;
+    const priceEl = document.createElement('div'); priceEl.className = 'card-price';
+    const pIcon = document.createElement('img');
+    pIcon.src = item.price.a ? 'art/UI/ame164.png' : 'art/UI/qua164.png';
+    priceEl.appendChild(pIcon);
+    priceEl.appendChild(document.createTextNode(priceAmt));
+
+    card.appendChild(thumb); card.appendChild(lbl); card.appendChild(priceEl);
+    card.onclick = () => {
+      S.storeSelected = sel ? null : item.id;
+      renderStoreGrid(catId); updateStoreFooter(); renderCharacter();
+    };
+    grid.appendChild(card);
+  });
+}
+
+function updateStoreFooter() {
+  const btn = $('buy-btn'), info = $('store-info');
+  if (!S.storeSelected) {
+    info.textContent = 'Select an item to buy';
+    btn.disabled = true; return;
+  }
+  const item = ITEMS.find(i => i.id === S.storeSelected);
+  const canAfford = item.price.a ? S.a >= item.price.a : S.q >= item.price.q;
+  const amt  = item.price.a ?? item.price.q;
+  const icon = item.price.a ? 'art/UI/ame164.png' : 'art/UI/qua164.png';
+  info.innerHTML = `${item.outfit} &middot; ${CAT_EMOJI[item.cat] || item.cat} &middot; ${amt}<img src="${icon}" class="inline-icon">${canAfford ? '' : ' &mdash; not enough!'}`;
+  btn.disabled = !canAfford;
+}
+
+function buyItem() {
+  const item = ITEMS.find(i => i.id === S.storeSelected);
+  if (!item) return;
+  if (item.price.a) { if (S.a < item.price.a) return; S.a -= item.price.a; }
+  else              { if (S.q < item.price.q) return; S.q -= item.price.q; }
+  S.owned.add(item.id);
+  S.storeSelected = null;
+  persist(); updateCurrency();
+  renderStoreGrid(S.storeCat); updateStoreFooter(); updateStats();
+}
+
+/* ═══════════════════════════════════════════
+   MUSIC
+═══════════════════════════════════════════ */
+function startMusic(listKey) {
+  S.musicList = listKey;
+  S.musicIdx = Math.floor(Math.random() * PLAYLISTS[listKey].length);
+  playTrack();
+}
+
+function playTrack() {
+  const bgm = $('bgm');
+  const path = PLAYLISTS[S.musicList][S.musicIdx % PLAYLISTS[S.musicList].length];
+  bgm.src = enc(path);
+  bgm.volume = +$('vol-slider').value;
+  bgm.play().catch(() => {});
+  $('track-name').textContent = path.split('/').pop().replace(/\.mp3$/i, '');
+}
+
+function toggleMusic() {
+  if (S.musicPlaying) {
+    S.musicPlaying = false;
+    const bgm = $('bgm');
+    bgm.pause();
+    bgm.src = '';
+    $('track-name').textContent = '♪ …';
+    $('music-note').classList.add('paused');
+  } else {
+    S.musicPlaying = true;
+    $('music-note').classList.remove('paused');
+    startMusic(S.musicList);
+  }
+}
+
+/* ═══════════════════════════════════════════
+   TIMER
+═══════════════════════════════════════════ */
+function selectPreset(mins) {
+  if (S.timerRunning) return;
+  S.timerPreset = mins;
+  S.timerSecs = mins * 60;
+  updateTimerDisplay();
+  document.querySelectorAll('.preset-btn').forEach(b =>
+    b.classList.toggle('active', +b.dataset.mins === mins));
+}
+
+function updateTimerDisplay() {
+  const m = Math.floor(S.timerSecs / 60);
+  const s = S.timerSecs % 60;
+  $('timer-display').textContent =
+    `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+function toggleTimer() {
+  S.timerRunning ? stopTimer() : beginTimer();
+}
+
+function beginTimer() {
+  S.timerRunning = true;
+  $('timer-toggle-btn').textContent = 'Stop';
+  document.querySelectorAll('.preset-btn').forEach(b => b.disabled = true);
+  renderNav();
+  S.timerInterval = setInterval(() => {
+    S.timerSecs--;
+    updateTimerDisplay();
+    if (S.timerSecs <= 0) {
+      clearInterval(S.timerInterval);
+      S.timerInterval = null;
+      S.timerRunning = false;
+      onTimerDone();
+    }
+  }, 1000);
+}
+
+function stopTimer() {
+  S.timerRunning = false;
+  clearInterval(S.timerInterval); S.timerInterval = null;
+  $('timer-toggle-btn').textContent = 'Start';
+  document.querySelectorAll('.preset-btn').forEach(b => b.disabled = false);
+  S.timerSecs = S.timerPreset * 60;
+  updateTimerDisplay(); renderNav();
+}
+
+function previewSfx() {
+  try { const sfx = $('sfx'); sfx.src = 'music/timer.wav'; sfx.volume = +$('sfx-vol-slider').value; sfx.play().catch(() => {}); } catch(_) {}
+}
+
+function onTimerDone() {
+  try { const sfx = $('sfx'); sfx.src = 'music/timer.wav'; sfx.volume = +$('sfx-vol-slider').value; sfx.play().catch(() => {}); } catch(_) {}
+
+  const r = TIMER_REWARDS[S.timerPreset];
+  S.q += r.q; S.a += r.a;
+  persist(); updateCurrency();
+
+  S.timerSecs = S.timerPreset * 60;
+  updateTimerDisplay();
+  $('timer-toggle-btn').textContent = 'Start';
+  document.querySelectorAll('.preset-btn').forEach(b => b.disabled = false);
+  renderNav();
+
+  const lines = $('reward-lines');
+  lines.innerHTML = '';
+  if (r.q) lines.innerHTML +=
+    `<div class="reward-line"><img src="art/UI/qua164.png" alt="quartz"> +${r.q}</div>`;
+  if (r.a) lines.innerHTML +=
+    `<div class="reward-line"><img src="art/UI/ame164.png" alt="amethyst"> +${r.a}</div>`;
+  const pop = $('reward-popup');
+  pop.classList.add('show');
+  setTimeout(() => pop.classList.remove('show'), 3400);
+}
+
+
+/* ═══════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════ */
+async function main() {
+  // 1. Load clothes config — fatal if missing
+  if (!window.CLOTHES_CONFIG) {
+    $('config-error').style.display = 'flex';
+    return;
+  }
+  applyClothesConfig(window.CLOTHES_CONFIG);
+
+  // 2. Seed state from player.js (or defaults), then override with localStorage
+  if (window.PLAYER_CONFIG) applyPlayerConfig(window.PLAYER_CONFIG);
+  else applyDefaultState();
+  loadState();
+
+  // 5. Wire up UI
+  document.querySelectorAll('.preset-btn').forEach(btn =>
+    btn.addEventListener('click', () => selectPreset(+btn.dataset.mins)));
+  $('timer-toggle-btn').addEventListener('click', toggleTimer);
+  $('save-btn').addEventListener('click', saveOutfit);
+  $('buy-btn').addEventListener('click', buyItem);
+
+  $('vol-slider').addEventListener('input', e => {
+    $('bgm').volume = +e.target.value;
+  });
+
+  $('bgm').addEventListener('ended', () => {
+    if (!S.musicPlaying) return;
+    S.musicIdx = (S.musicIdx + 1) % PLAYLISTS[S.musicList].length;
+    playTrack();
+  });
+
+  updateCurrency();
+  selectPreset(S.timerPreset);
+  $('music-note').classList.add('paused');
+  $('bg').style.backgroundImage = "url('art/UI/room.png')";
+  renderNav();
+  renderCharacter();
+
+  if (S.name) {
+    $('player-name').textContent = S.name;
+  } else {
+    $('name-prompt').style.display = 'flex';
+    setTimeout(() => $('name-input').focus(), 80);
+  }
+}
+
+main();
+</script>
+</body>
+</html>

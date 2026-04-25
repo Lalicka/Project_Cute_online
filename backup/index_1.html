@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dress Up Game</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: linear-gradient(160deg, #ffeef5 0%, #efe6ff 55%, #e6eeff 100%);
+      min-height: 100vh;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+    }
+
+    header {
+      text-align: center;
+      padding: 18px 16px 10px;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      color: #c2185b;
+      text-shadow: 1px 2px 0 #f8bbd0, 3px 4px 0 #ffd6e8;
+      letter-spacing: 3px;
+    }
+
+    #game {
+      display: flex;
+      gap: 18px;
+      padding: 0 20px 24px;
+      max-width: 940px;
+      margin: 0 auto;
+      align-items: flex-start;
+    }
+
+    /* ── LEFT PANEL ── */
+    #left-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 196px;
+      flex-shrink: 0;
+    }
+
+    #char-stage {
+      position: relative;
+      width: 196px;
+      height: 360px;
+      background: linear-gradient(180deg, #fff4f9 0%, #f5ecff 100%);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(194,24,91,.15), inset 0 1px 0 rgba(255,255,255,.8);
+      border: 2px solid rgba(255,180,210,.5);
+    }
+
+    #char-stage .layer {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: contain;
+    }
+
+    #empty-hint {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      color: #dba0c0;
+      font-size: .82rem;
+      line-height: 1.6;
+      pointer-events: none;
+      transition: opacity .2s;
+    }
+
+    #body-selector {
+      display: flex;
+      gap: 5px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .body-btn {
+      width: 28px;
+      height: 44px;
+      border-radius: 8px;
+      border: 2px solid #f8bbd0;
+      background: white;
+      cursor: pointer;
+      overflow: hidden;
+      padding: 0;
+      transition: all .2s;
+    }
+
+    .body-btn img { width: 100%; height: 100%; object-fit: contain; }
+
+    .body-btn.active {
+      border-color: #e91e8c;
+      box-shadow: 0 0 0 2px #e91e8c55;
+    }
+
+    /* Progress panel */
+    #progress-panel {
+      background: rgba(255,255,255,.65);
+      border-radius: 14px;
+      padding: 9px 12px;
+      border: 1px solid rgba(255,180,210,.4);
+    }
+
+    #progress-panel h3 {
+      font-size: .7rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #ab47bc;
+      margin-bottom: 7px;
+    }
+
+    .progress-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 4px 0;
+      gap: 6px;
+    }
+
+    .progress-name {
+      font-size: .76rem;
+      color: #999;
+      white-space: nowrap;
+    }
+
+    .progress-name.done {
+      color: #e91e8c;
+      font-weight: 700;
+    }
+
+    .progress-dots {
+      display: flex;
+      gap: 2px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      flex: 1;
+    }
+
+    .pdot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #f0c8d8;
+      transition: background .25s;
+    }
+    .pdot.on   { background: #e91e8c; }
+    .pdot.gold { background: #ffc107; }
+
+    /* ── WARDROBE ── */
+    #wardrobe {
+      flex: 1;
+      background: rgba(255,255,255,.65);
+      border-radius: 20px;
+      padding: 16px;
+      border: 1px solid rgba(255,180,210,.4);
+      box-shadow: 0 4px 20px rgba(194,24,91,.08);
+      display: flex;
+      flex-direction: column;
+      min-height: 420px;
+    }
+
+    #category-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    .cat-tab {
+      padding: 5px 14px;
+      border-radius: 20px;
+      border: 2px solid #f48fb1;
+      background: white;
+      color: #c2185b;
+      cursor: pointer;
+      font-size: .78rem;
+      font-weight: 700;
+      transition: all .2s;
+    }
+
+    .cat-tab:hover  { background: #fce4ec; }
+    .cat-tab.active { background: #e91e8c; color: white; border-color: #e91e8c; }
+
+    #item-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      flex: 1;
+      align-content: flex-start;
+    }
+
+    .item-card {
+      width: 92px;
+      border-radius: 12px;
+      border: 2px solid #fce4ec;
+      background: white;
+      cursor: pointer;
+      overflow: hidden;
+      transition: all .18s;
+      position: relative;
+      user-select: none;
+    }
+
+    .item-card:hover {
+      border-color: #f48fb1;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 14px rgba(233,30,140,.18);
+    }
+
+    .item-card.selected {
+      border-color: #e91e8c;
+      box-shadow: 0 0 0 3px #e91e8c2a;
+    }
+
+    .item-thumb {
+      position: relative;
+      width: 92px;
+      height: 124px;
+    }
+
+    .item-thumb img {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: contain;
+    }
+
+    .item-label {
+      font-size: .6rem;
+      text-align: center;
+      padding: 3px 4px 5px;
+      color: #bbb;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: color .18s;
+    }
+
+    .item-card.selected .item-label { color: #e91e8c; font-weight: 700; }
+
+    .check-badge {
+      position: absolute;
+      top: 4px; right: 4px;
+      background: #e91e8c;
+      color: white;
+      border-radius: 50%;
+      width: 18px; height: 18px;
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transform: scale(0);
+      transition: all .2s cubic-bezier(.34,1.56,.64,1);
+      z-index: 2;
+    }
+
+    .item-card.selected .check-badge { opacity: 1; transform: scale(1); }
+
+    #wardrobe-footer {
+      margin-top: 14px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    #clear-btn {
+      padding: 7px 18px;
+      border-radius: 20px;
+      border: 2px solid #f48fb1;
+      background: white;
+      color: #c2185b;
+      cursor: pointer;
+      font-size: .8rem;
+      font-weight: 600;
+      transition: all .18s;
+    }
+
+    #clear-btn:hover { background: #fce4ec; }
+
+    /* ── CELEBRATION ── */
+    #celebration {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 300;
+    }
+
+    #celebration.show { display: block; }
+
+    #cel-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(255,210,235,.55);
+      backdrop-filter: blur(4px);
+    }
+
+    #congrats-box {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%) scale(.4);
+      background: white;
+      border-radius: 24px;
+      padding: 36px 50px;
+      text-align: center;
+      box-shadow: 0 14px 52px rgba(233,30,140,.28);
+      border: 3px solid #fce4ec;
+      opacity: 0;
+      transition: transform .45s cubic-bezier(.34,1.56,.64,1), opacity .28s ease;
+      z-index: 1;
+    }
+
+    #celebration.show #congrats-box {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
+    }
+
+    #congrats-emoji { font-size: 3rem; margin-bottom: 6px; }
+
+    #congrats-title {
+      font-size: 1.9rem;
+      color: #e91e8c;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    #congrats-outfit {
+      font-size: 1.15rem;
+      color: #9c27b0;
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+
+    #congrats-sub {
+      font-size: .88rem;
+      color: #bbb;
+      margin-bottom: 22px;
+    }
+
+    #dismiss-btn {
+      padding: 11px 30px;
+      border-radius: 24px;
+      border: none;
+      background: linear-gradient(135deg, #e91e8c, #9c27b0);
+      color: white;
+      font-size: .95rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(233,30,140,.35);
+      transition: transform .15s;
+    }
+
+    #dismiss-btn:hover { transform: scale(1.06); }
+
+    /* Sparkles */
+    .sparkle {
+      position: fixed;
+      pointer-events: none;
+      z-index: 400;
+      animation: spkl var(--d) ease-out forwards;
+      font-size: 1.5rem;
+      line-height: 1;
+    }
+
+    @keyframes spkl {
+      0%   { transform: translate(0,0) rotate(0deg) scale(.3); opacity: 1; }
+      60%  { opacity: 1; }
+      100% { transform: translate(var(--dx),var(--dy)) rotate(var(--r)) scale(0); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>✨ Dress Up Game ✨</h1>
+</header>
+
+<div id="game">
+  <div id="left-panel">
+    <div id="char-stage">
+      <div id="empty-hint">✨<br>Pick some<br>clothes!</div>
+    </div>
+    <div id="body-selector"></div>
+    <div id="progress-panel">
+      <h3>Outfits to complete</h3>
+      <div id="outfit-list"></div>
+    </div>
+  </div>
+
+  <div id="wardrobe">
+    <div id="category-tabs"></div>
+    <div id="item-grid"></div>
+    <div id="wardrobe-footer">
+      <button id="clear-btn" onclick="clearAll()">✕ Clear All</button>
+    </div>
+  </div>
+</div>
+
+<div id="celebration">
+  <div id="cel-backdrop" onclick="dismissCelebration()"></div>
+  <div id="congrats-box">
+    <div id="congrats-emoji">🎉</div>
+    <div id="congrats-title">Perfect outfit!</div>
+    <div id="congrats-outfit"></div>
+    <div id="congrats-sub">You nailed the look! ✨</div>
+    <button id="dismiss-btn" onclick="dismissCelebration()">Keep playing!</button>
+  </div>
+</div>
+
+<script>
+const CATEGORIES = [
+  { id: 'face',  label: '😊 Face',        multi: false },
+  { id: 'hair',  label: '💇 Hair',         multi: false },
+  { id: 'dress', label: '👗 Dress',        multi: false },
+  { id: 'top',   label: '👚 Top',          multi: false },
+  { id: 'pants', label: '👖 Pants',        multi: false },
+  { id: 'coat',  label: '🧥 Coat',         multi: false },
+  { id: 'shoes', label: '👠 Shoes',        multi: false },
+  { id: 'acc',   label: '💎 Accessories',  multi: true  },
+];
+
+const ITEMS = [
+  { id: 'Face_Bertha',    cat: 'face',  outfit: 'Bertha',   z: 6 },
+  { id: 'Face_Courtney',  cat: 'face',  outfit: 'Courtney', z: 6 },
+  { id: 'Face_Lalicka',   cat: 'face',  outfit: 'Lalicka',  z: 6 },
+  { id: 'Face_Laura',     cat: 'face',  outfit: 'Laura',    z: 6 },
+  { id: 'Face_Pajama',    cat: 'face',  outfit: 'Pajama',   z: 6 },
+  { id: 'Hair_Bertha',    cat: 'hair',  outfit: 'Bertha',   z: 7 },
+  { id: 'Hair_Courtney',  cat: 'hair',  outfit: 'Courtney', z: 7 },
+  { id: 'Hair_Lalicka',   cat: 'hair',  outfit: 'Lalicka',  z: 7 },
+  { id: 'Hair_Laura',     cat: 'hair',  outfit: 'Laura',    z: 7 },
+  { id: 'Hair_Pajama',    cat: 'hair',  outfit: 'Pajama',   z: 7 },
+  { id: 'Dress_Bertha',   cat: 'dress', outfit: 'Bertha',   z: 3 },
+  { id: 'Dress_Courtney', cat: 'dress', outfit: 'Courtney', z: 3 },
+  { id: 'Dress_Lalicka',  cat: 'dress', outfit: 'Lalicka',  z: 3 },
+  { id: 'Top_Laura',      cat: 'top',   outfit: 'Laura',    z: 4 },
+  { id: 'Top_Pajama',     cat: 'top',   outfit: 'Pajama',   z: 4 },
+  { id: 'Pants_Courtney', cat: 'pants', outfit: 'Courtney', z: 3 },
+  { id: 'Pants_Laura',    cat: 'pants', outfit: 'Laura',    z: 3 },
+  { id: 'Pants_Pajama',   cat: 'pants', outfit: 'Pajama',   z: 3 },
+  { id: 'Coat_Bertha',    cat: 'coat',  outfit: 'Bertha',   z: 5 },
+  { id: 'Coat_Courtney',  cat: 'coat',  outfit: 'Courtney', z: 5 },
+  { id: 'Shoes_Bertha',   cat: 'shoes', outfit: 'Bertha',   z: 2 },
+  { id: 'Shoes_Courtney', cat: 'shoes', outfit: 'Courtney', z: 2 },
+  { id: 'Shoes_Lalicka',  cat: 'shoes', outfit: 'Lalicka',  z: 2 },
+  { id: 'Shoes_Laura',    cat: 'shoes', outfit: 'Laura',    z: 2 },
+  { id: 'Acc_1_Bertha',   cat: 'acc',   outfit: 'Bertha',   z: 8 },
+  { id: 'Acc_1_Courtney', cat: 'acc',   outfit: 'Courtney', z: 8 },
+  { id: 'Acc_2_Courtney', cat: 'acc',   outfit: 'Courtney', z: 9 },
+  { id: 'Acc_3_Courtney', cat: 'acc',   outfit: 'Courtney', z: 10 },
+  { id: 'Acc_4_Courtney', cat: 'acc',   outfit: 'Courtney', z: 11 },
+  { id: 'Acc_1_Lalicka',  cat: 'acc',   outfit: 'Lalicka',  z: 8 },
+  { id: 'Acc_2_Lalicka',  cat: 'acc',   outfit: 'Lalicka',  z: 9 },
+  { id: 'Acc_Laura',      cat: 'acc',   outfit: 'Laura',    z: 8 },
+];
+
+const OUTFITS = {
+  Bertha:   ['Face_Bertha',   'Hair_Bertha',   'Dress_Bertha',   'Coat_Bertha',   'Shoes_Bertha',   'Acc_1_Bertha'],
+  Courtney: ['Face_Courtney', 'Hair_Courtney', 'Dress_Courtney', 'Coat_Courtney', 'Pants_Courtney', 'Shoes_Courtney', 'Acc_1_Courtney', 'Acc_2_Courtney', 'Acc_3_Courtney', 'Acc_4_Courtney'],
+  Lalicka:  ['Face_Lalicka',  'Hair_Lalicka',  'Dress_Lalicka',  'Shoes_Lalicka', 'Acc_1_Lalicka',  'Acc_2_Lalicka'],
+  Laura:    ['Face_Laura',    'Hair_Laura',    'Pants_Laura',    'Top_Laura',     'Shoes_Laura',    'Acc_Laura'],
+  Pajama:   ['Face_Pajama',   'Hair_Pajama',   'Top_Pajama',     'Pants_Pajama'],
+};
+
+const OUTFIT_EMOJIS = {
+  Bertha: '🌹', Courtney: '🌟', Lalicka: '🌸', Laura: '🌿', Pajama: '🌙',
+};
+
+// ── State ──
+let selectedBody = 1;
+let selected = {};          // cat → Set<itemId>
+let celebratedOutfits = new Set();
+let currentCat = 'face';
+
+CATEGORIES.forEach(c => { selected[c.id] = new Set(); });
+
+// ── Helpers ──
+const el = id => document.getElementById(id);
+
+function getAllSelected() {
+  const s = new Set();
+  Object.values(selected).forEach(set => set.forEach(id => s.add(id)));
+  return s;
+}
+
+function isSelected(id) {
+  const item = ITEMS.find(i => i.id === id);
+  return item ? selected[item.cat].has(id) : false;
+}
+
+// ── Build UI ──
+function init() {
+  buildBodySelector();
+  buildCategoryTabs();
+  buildOutfitProgress();
+  renderCategory(currentCat);
+  renderCharacter();
+}
+
+function buildBodySelector() {
+  const wrap = el('body-selector');
+  for (let i = 1; i <= 5; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'body-btn' + (i === 1 ? ' active' : '');
+    btn.title = `Body ${i}`;
+    const img = document.createElement('img');
+    img.src = `art/Body${i}.png`;
+    img.alt = `Body ${i}`;
+    btn.appendChild(img);
+    btn.onclick = () => {
+      selectedBody = i;
+      document.querySelectorAll('.body-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderCharacter();
+    };
+    wrap.appendChild(btn);
+  }
+}
+
+function buildCategoryTabs() {
+  const wrap = el('category-tabs');
+  CATEGORIES.forEach(cat => {
+    if (!ITEMS.some(i => i.cat === cat.id)) return;
+    const btn = document.createElement('button');
+    btn.className = 'cat-tab' + (cat.id === currentCat ? ' active' : '');
+    btn.dataset.cat = cat.id;
+    btn.textContent = cat.label;
+    btn.onclick = () => {
+      currentCat = cat.id;
+      document.querySelectorAll('.cat-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderCategory(cat.id);
+    };
+    wrap.appendChild(btn);
+  });
+}
+
+function buildOutfitProgress() {
+  const wrap = el('outfit-list');
+  wrap.innerHTML = '';
+  Object.entries(OUTFITS).forEach(([name, items]) => {
+    const allSel = getAllSelected();
+    const filledCount = items.filter(id => allSel.has(id)).length;
+    const done = celebratedOutfits.has(name);
+
+    const row = document.createElement('div');
+    row.className = 'progress-row';
+    row.id = `prog-${name}`;
+
+    const nameEl = document.createElement('span');
+    nameEl.className = 'progress-name' + (done ? ' done' : '');
+    nameEl.textContent = (done ? '✓ ' : (OUTFIT_EMOJIS[name] + ' ')) + name;
+
+    const dots = document.createElement('div');
+    dots.className = 'progress-dots';
+    items.forEach((_, i) => {
+      const d = document.createElement('div');
+      d.className = 'pdot' + (done ? ' gold' : (i < filledCount ? ' on' : ''));
+      dots.appendChild(d);
+    });
+
+    row.appendChild(nameEl);
+    row.appendChild(dots);
+    wrap.appendChild(row);
+  });
+}
+
+function renderCategory(catId) {
+  const grid = el('item-grid');
+  grid.innerHTML = '';
+  ITEMS.filter(i => i.cat === catId).forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'item-card' + (isSelected(item.id) ? ' selected' : '');
+    card.id = `card-${item.id}`;
+    card.onclick = () => toggleItem(item);
+
+    // Thumbnail: body silhouette + clothing layer
+    const thumb = document.createElement('div');
+    thumb.className = 'item-thumb';
+
+    const bodyImg = document.createElement('img');
+    bodyImg.src = 'art/Body1.png';
+    bodyImg.alt = '';
+    thumb.appendChild(bodyImg);
+
+    const itemImg = document.createElement('img');
+    itemImg.src = `art/${item.id}.png`;
+    itemImg.alt = item.id;
+    thumb.appendChild(itemImg);
+
+    const check = document.createElement('div');
+    check.className = 'check-badge';
+    check.textContent = '✓';
+
+    const label = document.createElement('div');
+    label.className = 'item-label';
+    label.textContent = item.outfit;
+
+    card.appendChild(thumb);
+    card.appendChild(check);
+    card.appendChild(label);
+    grid.appendChild(card);
+  });
+}
+
+function renderCharacter() {
+  const stage = el('char-stage');
+  stage.querySelectorAll('.layer').forEach(l => l.remove());
+
+  const allSel = getAllSelected();
+  el('empty-hint').style.opacity = allSel.size === 0 ? '1' : '0';
+
+  // Base body
+  const bodyImg = document.createElement('img');
+  bodyImg.className = 'layer';
+  bodyImg.src = `art/Body${selectedBody}.png`;
+  bodyImg.style.zIndex = '1';
+  stage.appendChild(bodyImg);
+
+  // Clothing layers sorted by z-index
+  ITEMS
+    .filter(i => allSel.has(i.id))
+    .sort((a, b) => a.z - b.z)
+    .forEach(item => {
+      const img = document.createElement('img');
+      img.className = 'layer';
+      img.src = `art/${item.id}.png`;
+      img.style.zIndex = String(item.z);
+      stage.appendChild(img);
+    });
+}
+
+// ── Interaction ──
+function toggleItem(item) {
+  const cat = CATEGORIES.find(c => c.id === item.cat);
+  const catSet = selected[item.cat];
+  const wasSelected = catSet.has(item.id);
+
+  if (wasSelected) {
+    catSet.delete(item.id);
+  } else {
+    if (!cat.multi) {
+      // deselect others in category
+      catSet.clear();
+    }
+    catSet.add(item.id);
+  }
+
+  // Refresh card states in the current grid
+  ITEMS.filter(i => i.cat === item.cat).forEach(i => {
+    const c = el(`card-${i.id}`);
+    if (c) c.classList.toggle('selected', selected[i.cat].has(i.id));
+  });
+
+  renderCharacter();
+  buildOutfitProgress();
+  checkCompletion();
+}
+
+function clearAll() {
+  CATEGORIES.forEach(c => { selected[c.id] = new Set(); });
+  renderCharacter();
+  renderCategory(currentCat);
+  buildOutfitProgress();
+}
+
+// ── Outfit completion ──
+function checkCompletion() {
+  const allSel = getAllSelected();
+  Object.entries(OUTFITS).forEach(([name, items]) => {
+    if (celebratedOutfits.has(name)) return;
+    if (items.every(id => allSel.has(id))) {
+      celebratedOutfits.add(name);
+      celebrate(name);
+    }
+  });
+}
+
+// ── Celebration ──
+function celebrate(outfitName) {
+  playChime();
+  launchSparkles();
+  el('congrats-outfit').textContent = `${OUTFIT_EMOJIS[outfitName]} The "${outfitName}" look!`;
+  el('celebration').classList.add('show');
+}
+
+function dismissCelebration() {
+  el('celebration').classList.remove('show');
+}
+
+function launchSparkles() {
+  const glyphs = ['✨', '⭐', '💫', '🌟', '💖', '🌸', '🎀', '💝', '🌺', '🎊'];
+  const count = 40;
+  for (let i = 0; i < count; i++) {
+    setTimeout(() => {
+      const sp = document.createElement('div');
+      sp.className = 'sparkle';
+      sp.textContent = glyphs[Math.floor(Math.random() * glyphs.length)];
+
+      const x = 10 + Math.random() * (window.innerWidth  - 20);
+      const y = 10 + Math.random() * (window.innerHeight - 20);
+      const dx = (Math.random() - .5) * 220;
+      const dy = -(60 + Math.random() * 220);
+      const rot = ((Math.random() - .5) * 720).toFixed(0) + 'deg';
+      const dur = (.7 + Math.random() * 1.1).toFixed(2) + 's';
+
+      sp.style.cssText += `left:${x}px;top:${y}px;--dx:${dx}px;--dy:${dy}px;--r:${rot};--d:${dur};`;
+      document.body.appendChild(sp);
+      setTimeout(() => sp.remove(), parseFloat(dur) * 1000 + 100);
+    }, i * 35);
+  }
+}
+
+function playChime() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    // Rising arpeggio: C5 E5 G5 C6 E6
+    [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((freq, i) => {
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      const t = ctx.currentTime + i * 0.13;
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.22, t + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.65);
+      osc.start(t);
+      osc.stop(t + 0.65);
+    });
+    // Sparkle shimmer on top
+    [1567, 2093, 2637].forEach((freq, i) => {
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      const t = ctx.currentTime + 0.65 + i * 0.09;
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.12, t + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+      osc.start(t);
+      osc.stop(t + 0.45);
+    });
+  } catch (_) {}
+}
+
+init();
+</script>
+</body>
+</html>

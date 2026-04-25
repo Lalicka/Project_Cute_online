@@ -1,0 +1,1463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dress Up</title>
+<style>
+/* ── FONTS ── */
+@font-face {
+  font-family: 'MilkyNice';
+  src: url('fonts/MilkyNice.ttf') format('truetype');
+  font-weight: normal; font-style: normal;
+}
+
+/* ── RESET ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --lw: 166px;
+  --cw: 264px;
+  --world-w: calc(100vh * 16 / 9);
+  --world-left: max(0px, calc(50vw - 100vh * 8 / 9));
+  --panel-left: max(calc(100vh * 8 / 9), 50vw);
+  --panel: rgba(58, 12, 90, 0.80);
+  --pill:  rgba(255, 245, 255, 0.92);
+  --pill-border: rgba(200, 130, 220, 0.55);
+  --btn:   #f7d8f0;
+  --btn-border: #b060c0;
+  --btn-active: #e08cd8;
+  --card:  #eeddf8;
+  --card-sel: #c8eeff;
+  --card-border: #c090d8;
+  --card-sel-border: #60b0e0;
+  --accent: #c2185b;
+  --text:  #660055;
+  --panel-bg: rgba(228, 205, 255, 0.93);
+  --action-btn: #f4bede;
+  --action-border: #c050a0;
+}
+
+body { overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background: #1a001a; }
+
+/* ── GAME ── */
+#game { position: fixed; inset: 0; overflow: hidden; }
+
+/* ── WORLD (background + character, 16:9 anchored) ── */
+#world {
+  position: absolute;
+  left: var(--world-left);
+  top: 0; bottom: 0;
+  width: var(--world-w);
+  z-index: 1;
+  overflow: hidden;
+}
+
+#bg {
+  position: absolute; inset: 0;
+  background-size: cover; background-position: center;
+  transition: opacity 0.35s;
+}
+#bg.fade { opacity: 0; }
+
+/* ── LEFT PANEL ── */
+#left-panel {
+  position: absolute;
+  left: var(--world-left);
+  top: 0; bottom: 0;
+  width: var(--lw);
+  background: var(--panel);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 13px 10px 12px;
+  border-right: 1px solid rgba(200, 150, 240, 0.3);
+}
+
+/* ── CURRENCY ── */
+.currency-row { display: flex; flex-direction: column; gap: 6px; }
+
+.cpill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--pill);
+  border: 2px solid var(--pill-border);
+  border-radius: 24px;
+  padding: 5px 14px 5px 8px;
+  min-height: 40px;
+}
+.cpill img { width: 26px; height: 26px; object-fit: contain; flex-shrink: 0; }
+.cpill span { font-size: 1.15rem; font-weight: 800; color: var(--text); letter-spacing: .5px; }
+
+/* ── MUSIC PLAYER ── */
+#music-player {
+  background: var(--pill);
+  border: 2px solid var(--pill-border);
+  border-radius: 16px;
+  padding: 8px 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+#music-header { display: flex; align-items: center; gap: 7px; }
+
+#music-note {
+  font-size: .95rem;
+  display: inline-block;
+  animation: noteBop 1.5s ease-in-out infinite;
+}
+@keyframes noteBop {
+  0%,100% { transform: rotate(-8deg) scale(1); }
+  50%      { transform: rotate(8deg) scale(1.15); }
+}
+
+#track-name {
+  font-size: .67rem; font-weight: 700; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;
+}
+#music-toggle-btn {
+  background: var(--btn);
+  border: 1.5px solid var(--btn-border);
+  border-radius: 8px;
+  font-size: .8rem; color: var(--text);
+  padding: 3px 8px; cursor: pointer; flex-shrink: 0;
+  transition: background .12s;
+  line-height: 1;
+}
+#music-toggle-btn:hover { background: var(--btn-active); }
+
+#vol-slider {
+  width: 100%; height: 6px;
+  -webkit-appearance: none; appearance: none;
+  background: rgba(180, 80, 200, 0.25);
+  border-radius: 3px; cursor: pointer; outline: none;
+}
+#vol-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #f580c0, #b020a0);
+  border: 2px solid white;
+  box-shadow: 0 1px 4px rgba(0,0,0,.25);
+  cursor: pointer;
+}
+#vol-slider::-moz-range-thumb {
+  width: 16px; height: 16px; border-radius: 50%;
+  background: #c030b0; border: 2px solid white; cursor: pointer;
+}
+
+/* ── TIMER PANEL ── */
+#timer-panel.hidden { display: none; }
+#timer-panel {
+  background: rgba(80, 20, 120, 0.42);
+  border: 1.5px solid rgba(200, 140, 255, 0.38);
+  border-radius: 16px;
+  padding: 10px 9px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+
+#timer-section { display: flex; flex-direction: column; gap: 7px; }
+
+#sfx-vol-row {
+  display: flex; align-items: center; gap: 7px;
+}
+#sfx-vol-label {
+  font-size: .72rem; font-weight: 700; color: rgba(245, 200, 255, 0.85);
+  flex-shrink: 0;
+}
+#sfx-vol-slider {
+  flex: 1; min-width: 0; height: 6px;
+  -webkit-appearance: none; appearance: none;
+  background: rgba(180, 80, 200, 0.25);
+  border-radius: 3px; cursor: pointer; outline: none;
+}
+#sfx-vol-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #d0a0ff, #8030c0);
+  border: 2px solid white;
+  box-shadow: 0 1px 4px rgba(0,0,0,.25);
+  cursor: pointer;
+}
+#sfx-vol-slider::-moz-range-thumb {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: #9040d0; border: 2px solid white; cursor: pointer;
+}
+
+#preset-row { display: flex; gap: 5px; }
+
+/* Tooltip wrapper */
+.tt-wrap {
+  position: relative;
+  flex: 1;
+}
+.tt-wrap .tt {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(40, 0, 60, 0.95);
+  color: #f5d0ff;
+  font-size: .63rem;
+  font-weight: 700;
+  line-height: 1.5;
+  border-radius: 8px;
+  padding: 5px 9px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .15s;
+  z-index: 100;
+  border: 1px solid rgba(200, 130, 240, 0.4);
+  box-shadow: 0 3px 10px rgba(80, 0, 120, 0.3);
+}
+.tt-wrap:hover .tt { opacity: 1; }
+.tt-wrap .preset-btn { width: 100%; }
+
+.preset-btn {
+  background: var(--btn);
+  border: 2px solid var(--btn-border);
+  border-radius: 12px;
+  font-family: 'Courier New', monospace;
+  font-size: .88rem; font-weight: 800; color: var(--text);
+  padding: 6px 2px; cursor: pointer;
+  transition: all .15s;
+}
+.preset-btn:hover { background: var(--btn-active); }
+.preset-btn.active {
+  background: var(--btn-active);
+  border-color: #8020a0;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,.15);
+  color: #1a001a;
+}
+.preset-btn:active { transform: scale(.94); }
+
+#timer-display {
+  background: var(--pill);
+  border: 2px solid var(--pill-border);
+  border-radius: 14px;
+  text-align: center;
+  font-size: 1.7rem; font-weight: 800;
+  font-family: 'Courier New', monospace;
+  color: var(--text);
+  padding: 6px 4px;
+  letter-spacing: 3px;
+}
+
+#timer-toggle-btn {
+  background: var(--action-btn);
+  border: 2px solid var(--action-border);
+  border-radius: 24px;
+  font-family: 'MilkyNice', cursive;
+  font-size: 1.4rem; font-weight: 800; color: var(--text);
+  padding: 9px; cursor: pointer;
+  transition: all .15s;
+}
+#timer-toggle-btn:hover { filter: brightness(1.06); }
+#timer-toggle-btn:active { transform: scale(.96); }
+
+/* ── NAV ── */
+#nav-area {
+  margin-top: auto;
+  display: flex; flex-direction: column; gap: 7px;
+}
+
+.nav-btn {
+  background: var(--btn);
+  border: 2px solid var(--btn-border);
+  border-radius: 24px;
+  font-family: 'MilkyNice', cursive;
+  font-size: 1.3rem; font-weight: 800; color: var(--text);
+  padding: 10px 12px; cursor: pointer;
+  transition: all .15s; letter-spacing: .5px;
+}
+.nav-btn:hover { background: var(--btn-active); }
+.nav-btn:active { transform: scale(.97); }
+.nav-btn:disabled { opacity: .42; cursor: default; }
+.nav-btn:disabled:active { transform: none; }
+
+/* ── CHARACTER ── */
+#char-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+}
+#char-stage .layer {
+  position: absolute; top: 30px; left: 0; right: 0; bottom: 0;
+  width: 100%; height: calc(100% - 30px);
+  object-fit: contain; object-position: 28% bottom;
+}
+#char-hint {
+  position: absolute;
+  bottom: 38%; left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  color: rgba(255, 200, 240, 0.75);
+  font-size: .8rem; line-height: 1.7;
+  pointer-events: none;
+}
+
+/* ── SCENE PANELS ── */
+.scene-panel {
+  position: absolute;
+  left: var(--panel-left);
+  top: 14px; bottom: 62px;
+  width: min(492px, calc(100vw - var(--panel-left) - 16px));
+  background: var(--panel-bg);
+  backdrop-filter: blur(10px);
+  border-radius: 22px;
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  box-shadow: 0 8px 32px rgba(80, 0, 120, 0.22);
+  z-index: 15;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity .22s, transform .22s;
+}
+.scene-panel.hidden {
+  opacity: 0; pointer-events: none; transform: scale(.97);
+}
+
+/* ── CLOSET ── */
+#closet-panel { flex-direction: row; }
+
+#cat-tabs {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 12px 5px 12px 10px;
+  width: 86px; flex-shrink: 0;
+  overflow-y: auto;
+  border-right: 1px solid rgba(180, 120, 210, 0.3);
+}
+.cat-tab {
+  background: var(--btn);
+  border: 2px solid var(--btn-border);
+  border-radius: 12px;
+  font-family: 'MilkyNice', cursive;
+  font-size: 1rem; font-weight: 700; color: var(--text);
+  padding: 7px 3px; cursor: pointer;
+  text-align: center; line-height: 1.2;
+  transition: all .14s;
+}
+.cat-tab:hover { background: var(--btn-active); }
+.cat-tab.active {
+  background: var(--btn-active);
+  border-color: #8020a0;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,.12);
+}
+.cat-tab:active { transform: scale(.94); }
+
+#closet-content {
+  flex: 1; display: flex; flex-direction: column;
+  overflow: hidden; padding: 10px 8px 10px 6px;
+}
+#closet-grid {
+  flex: 1; overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px; align-content: start; padding-right: 3px;
+}
+#closet-footer {
+  padding-top: 9px;
+  display: flex; justify-content: center;
+}
+#save-btn {
+  background: var(--action-btn);
+  border: 2px solid var(--action-border);
+  border-radius: 24px;
+  font-family: 'MilkyNice', cursive;
+  font-size: 1.5rem; font-weight: 800; color: var(--text);
+  padding: 9px 36px; cursor: pointer; min-height: 44px;
+  transition: all .15s;
+}
+#save-btn:hover { filter: brightness(1.06); }
+#save-btn:active { transform: scale(.96); }
+
+/* ── STORE ── */
+#store-panel { flex-direction: row; }
+
+#store-cat-tabs {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 12px 5px 12px 10px;
+  width: 86px; flex-shrink: 0;
+  overflow-y: auto;
+  border-right: 1px solid rgba(180, 120, 210, 0.3);
+}
+
+#store-content {
+  flex: 1; display: flex; flex-direction: column;
+  overflow: hidden; padding: 10px 8px 10px 6px;
+}
+
+#store-grid {
+  flex: 1; overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  align-content: start; padding-right: 3px;
+}
+#store-footer {
+  padding-top: 9px;
+  display: flex; align-items: center; gap: 10px;
+  border-top: 1px solid rgba(180, 120, 210, 0.35);
+}
+#store-info {
+  flex: 1; font-size: .76rem; font-weight: 600; color: var(--text);
+  line-height: 1.4;
+}
+#buy-btn {
+  background: var(--action-btn);
+  border: 2px solid var(--action-border);
+  border-radius: 24px;
+  font-family: 'MilkyNice', cursive;
+  font-size: 1.5rem; font-weight: 800; color: var(--text);
+  padding: 9px 26px; min-height: 44px; min-width: 108px; cursor: pointer;
+  transition: all .15s;
+}
+#buy-btn:hover:not(:disabled) { filter: brightness(1.06); }
+#buy-btn:active:not(:disabled) { transform: scale(.96); }
+#buy-btn:disabled { opacity: .45; cursor: default; }
+
+/* ── ITEM CARDS ── */
+.item-card {
+  background: var(--card);
+  border: 2px solid var(--card-border);
+  border-radius: 14px;
+  cursor: pointer; overflow: hidden;
+  display: flex; flex-direction: column;
+  align-items: center;
+  padding: 6px 5px 5px;
+  aspect-ratio: 3/4;
+  position: relative;
+  transition: transform .14s, filter .14s;
+}
+.item-card:hover { transform: scale(1.04); filter: brightness(1.05); }
+.item-card.selected {
+  background: var(--card-sel);
+  border-color: var(--card-sel-border);
+  box-shadow: 0 0 0 2px rgba(80, 170, 220, 0.3);
+}
+.item-card .thumb {
+  position: relative; width: 100%; flex: 1; min-height: 0;
+}
+.item-card .thumb img {
+  position: absolute; top: 0; left: 0;
+  width: 100%; height: 100%; object-fit: contain;
+}
+.item-card .card-lbl {
+  font-size: .6rem; font-weight: 700; color: var(--text);
+  text-align: center; padding: 2px 2px 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;
+}
+.item-card .card-price {
+  display: flex; align-items: center; justify-content: center;
+  gap: 3px; font-size: .68rem; font-weight: 800; color: var(--text);
+  padding: 2px 0;
+}
+.item-card .card-price img { width: 14px; height: 14px; object-fit: contain; }
+
+.badge {
+  position: absolute; top: 4px; right: 4px;
+  width: 18px; height: 18px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: white;
+}
+.badge-eq  { background: #c2185b; }
+.badge-own { background: #4caf50; }
+
+.empty-msg {
+  grid-column: 1 / -1;
+  text-align: center; color: rgba(80, 30, 100, 0.65);
+  font-size: .8rem; padding: 18px 10px; line-height: 1.7;
+}
+
+/* ── BODY CARDS ── */
+.body-card {
+  background: var(--card);
+  border: 2px solid var(--card-border);
+  border-radius: 14px;
+  cursor: pointer; overflow: hidden;
+  display: flex; flex-direction: column;
+  align-items: center; padding: 4px 4px 5px;
+  aspect-ratio: 3/4; transition: transform .14s;
+}
+.body-card:hover { transform: scale(1.04); }
+.body-card.selected { background: var(--card-sel); border-color: var(--card-sel-border); }
+.body-card img { width: 100%; flex: 1; min-height: 0; object-fit: contain; }
+.body-card .card-lbl { font-size: .6rem; font-weight: 700; color: var(--text); padding: 2px 0 1px; }
+
+/* ── REWARD POPUP ── */
+#reward-popup {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%) scale(.5);
+  background: rgba(255, 242, 255, .97);
+  border: 3px solid rgba(200, 150, 230, .8);
+  border-radius: 22px;
+  padding: 22px 38px;
+  text-align: center;
+  z-index: 60;
+  box-shadow: 0 8px 40px rgba(120, 0, 160, .35);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform .35s cubic-bezier(.34,1.56,.64,1), opacity .22s;
+}
+#reward-popup.show {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+#reward-popup h3 { font-size: 1.25rem; color: var(--text); margin-bottom: 10px; }
+.reward-line {
+  display: flex; align-items: center; justify-content: center;
+  gap: 9px; font-size: 1.1rem; font-weight: 800; color: var(--text); margin: 4px 0;
+}
+.reward-line img { width: 28px; height: 28px; object-fit: contain; }
+
+/* ── CELEBRATION ── */
+#celebration { display: none; position: fixed; inset: 0; z-index: 300; }
+#celebration.show { display: block; }
+
+#cel-bd {
+  position: absolute; inset: 0;
+  background: rgba(180, 130, 255, .52);
+  backdrop-filter: blur(5px);
+}
+#congrats-box {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%) scale(.4);
+  background: white; border-radius: 24px;
+  padding: 32px 48px; text-align: center;
+  box-shadow: 0 12px 50px rgba(130, 0, 200, .32);
+  border: 3px solid #e8ccff;
+  opacity: 0;
+  transition: transform .45s cubic-bezier(.34,1.56,.64,1), opacity .28s;
+  z-index: 1;
+}
+#celebration.show #congrats-box { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+#cel-emoji { font-size: 2.8rem; }
+#cel-title { font-size: 1.9rem; color: var(--text); font-weight: 800; margin: 6px 0; }
+#cel-outfit { font-size: 1.1rem; color: var(--text); font-weight: 600; margin-bottom: 4px; }
+#cel-sub { font-size: .88rem; color: var(--text); opacity: .55; margin-bottom: 20px; }
+#cel-dismiss {
+  padding: 11px 28px; border-radius: 24px; border: none;
+  background: linear-gradient(135deg, #e91e8c, #9c27b0);
+  color: white; font-size: .95rem; font-weight: 700;
+  cursor: pointer; box-shadow: 0 4px 16px rgba(200,0,150,.3);
+  transition: transform .15s;
+}
+#cel-dismiss:hover { transform: scale(1.06); }
+
+/* ── SPARKLES ── */
+.sparkle {
+  position: fixed; pointer-events: none; z-index: 400;
+  font-size: 1.5rem; line-height: 1;
+  animation: spkl var(--d) ease-out forwards;
+}
+@keyframes spkl {
+  0%   { transform: translate(0,0) rotate(0deg) scale(.3); opacity: 1; }
+  60%  { opacity: 1; }
+  100% { transform: translate(var(--dx),var(--dy)) rotate(var(--r)) scale(0); opacity: 0; }
+}
+
+/* ── SCROLLBARS ── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(180,100,220,.4); border-radius: 3px; }
+
+/* ── CONFIG FATAL ERROR ── */
+#config-error {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(20, 0, 30, 0.97);
+  display: flex; align-items: center; justify-content: center;
+}
+#config-error-box {
+  background: rgba(255, 240, 242, 0.97);
+  border: 3px solid #cc0033;
+  border-radius: 20px;
+  padding: 36px 48px;
+  text-align: center;
+  max-width: 440px;
+}
+#config-error-box h2 { color: #990022; font-size: 1.5rem; margin-bottom: 14px; }
+#config-error-box p  { color: #660033; font-size: .88rem; line-height: 1.8; margin: 3px 0; }
+#config-error-box code { background: rgba(200,0,50,.1); border-radius: 4px; padding: 1px 5px; font-size: .83rem; }
+
+/* ── SAVE WARNING ── */
+#save-warning {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 500;
+  background: rgba(155, 0, 0, 0.88);
+  padding: 7px 16px;
+  display: flex; align-items: center; gap: 12px;
+}
+#save-warning-text {
+  color: white; font-size: .76rem; font-weight: 600; flex: 1;
+}
+#link-save-btn {
+  background: rgba(255,255,255,0.18);
+  border: 1.5px solid rgba(255,255,255,0.5);
+  border-radius: 12px;
+  color: white; font-size: .73rem; font-weight: 700;
+  padding: 4px 11px; cursor: pointer; flex-shrink: 0;
+  transition: background .12s;
+}
+#link-save-btn:hover { background: rgba(255,255,255,0.3); }
+</style>
+</head>
+<body>
+<div id="game">
+
+  <!-- WORLD: background + character, scales fit-height -->
+  <div id="world">
+    <div id="bg"></div>
+    <div id="char-stage">
+      <div id="char-hint">✨<br>Go to Closet<br>to get dressed!</div>
+    </div>
+  </div>
+
+  <!-- LEFT PANEL -->
+  <div id="left-panel">
+    <div class="currency-row">
+      <div class="cpill">
+        <img src="art/UI/ame164.png" alt="amethyst">
+        <span id="ame-count">0</span>
+      </div>
+      <div class="cpill">
+        <img src="art/UI/qua164.png" alt="quartz">
+        <span id="qua-count">50</span>
+      </div>
+    </div>
+
+    <div id="music-player">
+      <div id="music-header">
+        <span id="music-note">🎵</span>
+        <span id="track-name">♪ …</span>
+        <button id="music-toggle-btn">▶</button>
+      </div>
+      <input type="range" id="vol-slider" min="0" max="1" step="0.05" value="0.15">
+    </div>
+
+    <div id="timer-panel">
+      <div id="timer-section">
+        <div id="preset-row">
+          <div class="tt-wrap">
+            <button class="preset-btn" data-mins="25">25</button>
+            <div class="tt">+10 Quartz<br>+1 Amethyst</div>
+          </div>
+          <div class="tt-wrap">
+            <button class="preset-btn" data-mins="5">5</button>
+            <div class="tt">+2 Quartz</div>
+          </div>
+          <div class="tt-wrap">
+            <button class="preset-btn" data-mins="10">10</button>
+            <div class="tt">+5 Quartz</div>
+          </div>
+        </div>
+        <div id="timer-display">25:00</div>
+        <button id="timer-toggle-btn">Start</button>
+      </div>
+      <div id="sfx-vol-row">
+        <span id="sfx-vol-label">🔔</span>
+        <input type="range" id="sfx-vol-slider" min="0" max="1" step="0.05" value="0.5">
+      </div>
+    </div>
+
+    <div id="nav-area"></div>
+  </div>
+
+  <!-- CLOSET -->
+  <div id="closet-panel" class="scene-panel hidden">
+    <div id="cat-tabs"></div>
+    <div id="closet-content">
+      <div id="closet-grid"></div>
+      <div id="closet-footer">
+        <button id="save-btn">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STORE -->
+  <div id="store-panel" class="scene-panel hidden">
+    <div id="store-cat-tabs"></div>
+    <div id="store-content">
+      <div id="store-grid"></div>
+      <div id="store-footer">
+        <div id="store-info">Select an item to buy</div>
+        <button id="buy-btn" disabled>Buy</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- REWARD -->
+  <div id="reward-popup">
+    <h3>⏰ Time's up!</h3>
+    <div id="reward-lines"></div>
+  </div>
+
+  <!-- CELEBRATION -->
+  <div id="celebration">
+    <div id="cel-bd" onclick="dismissCelebration()"></div>
+    <div id="congrats-box">
+      <div id="cel-emoji">🎉</div>
+      <div id="cel-title">Perfect outfit!</div>
+      <div id="cel-outfit"></div>
+      <div id="cel-sub">You nailed the look! ✨</div>
+      <button id="cel-dismiss" onclick="dismissCelebration()">Keep playing!</button>
+    </div>
+  </div>
+
+  <!-- FATAL: clothes.json missing -->
+  <div id="config-error" style="display:none">
+    <div id="config-error-box">
+      <h2>⚠️ Config missing</h2>
+      <p><code>config/clothes.json</code> was not found.</p>
+      <p>Place it next to <code>index.html</code> and reload.</p>
+    </div>
+  </div>
+
+  <!-- SAVE WARNING: player.json absent or no write access -->
+  <div id="save-warning" style="display:none">
+    <span id="save-warning-text"></span>
+    <button id="link-save-btn" onclick="linkSaveFile()">Link player.json</button>
+  </div>
+</div>
+
+<audio id="bgm"></audio>
+<audio id="sfx"></audio>
+
+<script>
+/* ═══════════════════════════════════════════
+   DATA (populated from config/clothes.json)
+═══════════════════════════════════════════ */
+let CATEGORIES = [];
+let ITEMS      = [];
+let OUTFITS    = {};
+let OUTFIT_EMO = {};
+let STARTERS   = [];
+
+const TIMER_REWARDS = { 5:{q:2,a:0}, 10:{q:5,a:0}, 25:{q:10,a:1} };
+
+const PLAYLISTS = {
+  room: [
+    'music/room/Cotton Candy Skies (1).mp3',
+    'music/room/Amethyst Dance.mp3',
+    'music/room/Crystal Glow.mp3',
+    'music/room/Glitter and Grace.mp3',
+    'music/room/Sakura Girl.mp3',
+    'music/room/Pink Fabric Dream.mp3',
+    'music/room/Cute Pink Dress.mp3',
+    'music/room/Dreamy Anime Girl.mp3',
+    'music/room/Diamonds in the Air.mp3',
+    'music/room/Project Cute (1).mp3',
+    'music/room/Quartz Stars.mp3',
+    'music/room/Amethyst Shimmer (1).mp3',
+  ],
+  store: [
+    'music/store/Cosmic Threads.mp3',
+    'music/store/Starlit Stiches.mp3',
+    'music/store/Bubble Bath Blues.mp3',
+    'music/store/Starlit Stiches (1).mp3',
+  ],
+};
+
+/* ═══════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════ */
+const S = {
+  scene: 'room',
+  q: 50, a: 0,
+  owned: new Set(),
+  equipped: {},
+  draft: {},
+  body: 1,
+  draftBody: 1,
+  timerPreset: 25,
+  timerRunning: false,
+  timerSecs: 25 * 60,
+  timerInterval: null,
+  celebratedOutfits: new Set(),
+  storeSelected: null,
+  closetCat: 'body',
+  storeCat: 'face',
+  musicList: 'room',
+  musicIdx: 0,
+  musicPlaying: false,
+};
+
+/* ═══════════════════════════════════════════
+   PERSISTENCE — File System Access API
+═══════════════════════════════════════════ */
+let playerFileHandle = null;
+let canSave = false;
+
+function idbOpen() {
+  return new Promise((res, rej) => {
+    const req = indexedDB.open('dressup_v1', 1);
+    req.onupgradeneeded = e => e.target.result.createObjectStore('kv');
+    req.onsuccess = e => res(e.target.result);
+    req.onerror   = e => rej(e.target.error);
+  });
+}
+async function idbGet(key) {
+  const db = await idbOpen();
+  return new Promise((res, rej) => {
+    const tx = db.transaction('kv', 'readonly');
+    const req = tx.objectStore('kv').get(key);
+    req.onsuccess = e => res(e.target.result ?? null);
+    req.onerror   = e => rej(e.target.error);
+  });
+}
+async function idbSet(key, value) {
+  const db = await idbOpen();
+  return new Promise((res, rej) => {
+    const tx = db.transaction('kv', 'readwrite');
+    tx.objectStore('kv').put(value, key);
+    tx.oncomplete = () => res();
+    tx.onerror    = e => rej(e.target.error);
+  });
+}
+
+async function initSaveHandle() {
+  if (!('showOpenFilePicker' in window)) return;
+  try {
+    const handle = await idbGet('playerFileHandle');
+    if (!handle) return;
+    const perm = await handle.queryPermission({ mode: 'readwrite' });
+    if (perm === 'granted') { playerFileHandle = handle; canSave = true; }
+  } catch(_) {}
+}
+
+async function linkSaveFile() {
+  if (!('showOpenFilePicker' in window)) return;
+  try {
+    const stored = await idbGet('playerFileHandle');
+    if (stored) {
+      const perm = await stored.requestPermission({ mode: 'readwrite' });
+      if (perm === 'granted') {
+        playerFileHandle = stored; canSave = true;
+        hideSaveWarning(); writePlayerJson(); return;
+      }
+    }
+    const [handle] = await window.showOpenFilePicker({
+      types: [{ description: 'JSON', accept: { 'application/json': ['.json'] } }],
+      multiple: false,
+    });
+    await idbSet('playerFileHandle', handle);
+    playerFileHandle = handle; canSave = true;
+    hideSaveWarning(); writePlayerJson();
+  } catch(_) {}
+}
+
+async function writePlayerJson() {
+  if (!canSave || !playerFileHandle) return;
+  const data = {
+    q: S.q, a: S.a,
+    owned: [...S.owned],
+    equipped: Object.fromEntries(Object.entries(S.equipped).map(([k, v]) => [k, [...v]])),
+    body: S.body,
+    celebratedOutfits: [...S.celebratedOutfits],
+  };
+  try {
+    const writable = await playerFileHandle.createWritable();
+    await writable.write(JSON.stringify(data, null, 2));
+    await writable.close();
+  } catch(_) {
+    canSave = false;
+    showSaveWarning('Write failed — progress won\'t be saved.');
+  }
+}
+
+function showSaveWarning(msg) {
+  $('save-warning-text').textContent = msg;
+  $('save-warning').style.display = 'flex';
+}
+function hideSaveWarning() {
+  $('save-warning').style.display = 'none';
+}
+
+/* ═══════════════════════════════════════════
+   CONFIG
+═══════════════════════════════════════════ */
+function applyClothesConfig(cfg) {
+  CATEGORIES = cfg.categories;
+  ITEMS      = cfg.items;
+  OUTFITS    = cfg.outfits;
+  OUTFIT_EMO = cfg.outfitEmoji;
+  STARTERS   = cfg.starters;
+}
+
+function applyDefaultState() {
+  S.q = 50; S.a = 0;
+  S.owned = new Set(STARTERS);
+  CATEGORIES.forEach(c => { S.equipped[c.id] = new Set(); S.draft[c.id] = new Set(); });
+  const sf = STARTERS.find(id => ITEMS.find(i => i.id === id && i.cat === 'face'));
+  const sh = STARTERS.find(id => ITEMS.find(i => i.id === id && i.cat === 'hair'));
+  if (sf) S.equipped.face.add(sf);
+  if (sh) S.equipped.hair.add(sh);
+  S.body = 1; S.draftBody = 1;
+  S.celebratedOutfits = new Set();
+}
+
+function applyPlayerConfig(cfg) {
+  S.q = cfg.q ?? 50;
+  S.a = cfg.a ?? 0;
+  S.owned = new Set(cfg.owned ?? STARTERS);
+  CATEGORIES.forEach(c => { S.equipped[c.id] = new Set(); S.draft[c.id] = new Set(); });
+  if (cfg.equipped) {
+    for (const [cat, arr] of Object.entries(cfg.equipped)) {
+      if (S.equipped[cat]) S.equipped[cat] = new Set(arr);
+    }
+  }
+  S.body = cfg.body ?? 1;
+  S.draftBody = S.body;
+  S.celebratedOutfits = new Set(cfg.celebratedOutfits ?? []);
+  if (S.equipped.face.size === 0) {
+    const fb = STARTERS.find(id => ITEMS.find(i => i.id === id && i.cat === 'face'));
+    if (fb) S.equipped.face.add(fb);
+  }
+}
+
+/* ═══════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════ */
+const $ = id => document.getElementById(id);
+const enc = p => p.split('/').map(encodeURIComponent).join('/');
+
+function allEquippedFrom(eq) {
+  const s = new Set();
+  Object.values(eq).forEach(set => set.forEach(id => s.add(id)));
+  return s;
+}
+
+function allEquipped() { return allEquippedFrom(S.equipped); }
+
+function initDraft() {
+  CATEGORIES.forEach(c => { S.draft[c.id] = new Set(S.equipped[c.id]); });
+  S.draftBody = S.body;
+}
+
+function getDisplayEquipped() {
+  if (S.scene === 'closet') return allEquippedFrom(S.draft);
+  const base = allEquippedFrom(S.equipped);
+  if (S.scene === 'store' && S.storeSelected) {
+    const preview = ITEMS.find(i => i.id === S.storeSelected);
+    if (preview) {
+      const cat = CATEGORIES.find(c => c.id === preview.cat);
+      if (!cat.multi) S.equipped[preview.cat].forEach(id => base.delete(id));
+      base.add(preview.id);
+    }
+  }
+  return base;
+}
+
+function updateCurrency() {
+  $('ame-count').textContent = S.a;
+  $('qua-count').textContent = S.q;
+}
+
+/* ═══════════════════════════════════════════
+   SCENES
+═══════════════════════════════════════════ */
+function showScene(scene) {
+  const wasStore = S.scene === 'store';
+  S.scene = scene;
+
+  $('bg').style.backgroundImage = scene === 'store'
+    ? "url('art/UI/store.png')"
+    : "url('art/UI/room.png')";
+
+  $('closet-panel').classList.toggle('hidden', scene !== 'closet');
+  $('store-panel').classList.toggle('hidden',  scene !== 'store');
+  $('timer-panel').classList.toggle('hidden', scene !== 'room');
+
+  const nowStore = scene === 'store';
+  if (wasStore !== nowStore) {
+    const newList = nowStore ? 'store' : 'room';
+    if (S.musicPlaying) startMusic(newList);
+    else S.musicList = newList;
+  }
+
+  renderNav();
+
+  if (scene === 'closet') {
+    initDraft();
+    renderClosetTabs();
+    renderClosetGrid(S.closetCat);
+  } else if (scene === 'store') {
+    S.storeSelected = null;
+    renderStoreTabs();
+    renderStoreGrid(S.storeCat);
+    updateStoreFooter();
+  }
+  renderCharacter();
+}
+
+function renderNav() {
+  const nav = $('nav-area');
+  nav.innerHTML = '';
+  const mk = (label, target) => {
+    const b = document.createElement('button');
+    b.className = 'nav-btn';
+    b.textContent = label;
+    b.disabled = S.timerRunning;
+    b.onclick = () => showScene(target);
+    nav.appendChild(b);
+  };
+  if (S.scene === 'room') {
+    mk('Closet', 'closet');
+    mk('Store',  'store');
+  } else {
+    mk('Room', 'room');
+  }
+}
+
+/* ═══════════════════════════════════════════
+   CHARACTER
+═══════════════════════════════════════════ */
+function renderCharacter() {
+  const stage = $('char-stage');
+  stage.querySelectorAll('.layer').forEach(l => l.remove());
+  const eq = getDisplayEquipped();
+  $('char-hint').style.display = eq.size === 0 ? '' : 'none';
+
+  const bodyImg = document.createElement('img');
+  bodyImg.className = 'layer';
+  bodyImg.src = `art/Body${S.scene === 'closet' ? S.draftBody : S.body}.png`;
+  bodyImg.style.zIndex = '1';
+  stage.appendChild(bodyImg);
+
+  ITEMS.filter(i => eq.has(i.id))
+    .sort((a, b) => a.z - b.z)
+    .forEach(item => {
+      const img = document.createElement('img');
+      img.className = 'layer';
+      img.src = `art/${item.id}.png`;
+      img.style.zIndex = String(item.z);
+      stage.appendChild(img);
+    });
+}
+
+/* ═══════════════════════════════════════════
+   CLOSET
+═══════════════════════════════════════════ */
+function renderClosetTabs() {
+  const tabs = $('cat-tabs');
+  tabs.innerHTML = '';
+  CATEGORIES.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'cat-tab' + (cat.id === S.closetCat ? ' active' : '');
+    btn.textContent = cat.label;
+    btn.onclick = () => {
+      S.closetCat = cat.id;
+      renderClosetTabs();
+      renderClosetGrid(cat.id);
+    };
+    tabs.appendChild(btn);
+  });
+}
+
+function renderClosetGrid(catId) {
+  const grid = $('closet-grid');
+  grid.innerHTML = '';
+
+  if (catId === 'body') {
+    for (let i = 1; i <= 5; i++) {
+      const card = document.createElement('div');
+      card.className = 'body-card' + (S.draftBody === i ? ' selected' : '');
+      const img = document.createElement('img');
+      img.src = `art/Body${i}.png`;
+      const lbl = document.createElement('div');
+      lbl.className = 'card-lbl';
+      lbl.textContent = `Body ${i}`;
+      card.appendChild(img); card.appendChild(lbl);
+      card.onclick = () => {
+        S.draftBody = i;
+        renderCharacter(); renderClosetGrid('body');
+      };
+      grid.appendChild(card);
+    }
+    return;
+  }
+
+  const ownedInCat = ITEMS.filter(i => i.cat === catId && S.owned.has(i.id));
+  if (ownedInCat.length === 0) {
+    const msg = document.createElement('div');
+    msg.className = 'empty-msg';
+    msg.textContent = '✨ Visit the Store to unlock items for this category!';
+    grid.appendChild(msg);
+    return;
+  }
+
+  ownedInCat.forEach(item => {
+    const isEq = S.draft[item.cat]?.has(item.id);
+    const card = document.createElement('div');
+    card.className = 'item-card' + (isEq ? ' selected' : '');
+
+    if (isEq) {
+      const b = document.createElement('div');
+      b.className = 'badge badge-eq'; b.textContent = '✓';
+      card.appendChild(b);
+    }
+
+    const thumb = document.createElement('div'); thumb.className = 'thumb';
+    const bg = document.createElement('img');
+    bg.src = `art/Body${S.draftBody}.png`; bg.alt = '';
+    const ii = document.createElement('img');
+    ii.src = `art/${item.id}.png`;
+    thumb.appendChild(bg); thumb.appendChild(ii);
+
+    const lbl = document.createElement('div');
+    lbl.className = 'card-lbl'; lbl.textContent = item.outfit;
+
+    card.appendChild(thumb); card.appendChild(lbl);
+    card.onclick = () => toggleEquip(item);
+    grid.appendChild(card);
+  });
+}
+
+function toggleEquip(item) {
+  const cat = CATEGORIES.find(c => c.id === item.cat);
+  const set = S.draft[item.cat];
+  if (set.has(item.id)) {
+    if (item.cat === 'face') return; // face can only be swapped, never removed
+    set.delete(item.id);
+  } else {
+    if (!cat.multi) set.clear();
+    set.add(item.id);
+  }
+  renderCharacter();
+  renderClosetGrid(S.closetCat);
+}
+
+function saveOutfit() {
+  CATEGORIES.forEach(c => { S.equipped[c.id] = new Set(S.draft[c.id]); });
+  S.body = S.draftBody;
+  writePlayerJson();
+  checkOutfitCompletion();
+}
+
+/* ═══════════════════════════════════════════
+   STORE
+═══════════════════════════════════════════ */
+function renderStoreTabs() {
+  const tabs = $('store-cat-tabs');
+  tabs.innerHTML = '';
+  CATEGORIES.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'cat-tab' + (cat.id === S.storeCat ? ' active' : '');
+    btn.textContent = cat.label;
+    btn.onclick = () => {
+      S.storeCat = cat.id;
+      S.storeSelected = null;
+      renderStoreTabs();
+      renderStoreGrid(S.storeCat);
+      updateStoreFooter();
+      renderCharacter();
+    };
+    tabs.appendChild(btn);
+  });
+}
+
+function renderStoreGrid(catId) {
+  const grid = $('store-grid');
+  grid.innerHTML = '';
+
+  if (catId === 'body') {
+    const msg = document.createElement('div');
+    msg.className = 'empty-msg';
+    msg.textContent = '✨ Body types are free — change them in the Closet!';
+    grid.appendChild(msg);
+    return;
+  }
+
+  const avail = ITEMS.filter(i => i.cat === catId && !S.owned.has(i.id));
+
+  if (avail.length === 0) {
+    const msg = document.createElement('div');
+    msg.className = 'empty-msg';
+    msg.textContent = '✨ You own everything in this category!';
+    grid.appendChild(msg);
+    return;
+  }
+
+  avail.forEach(item => {
+    const sel = S.storeSelected === item.id;
+    const card = document.createElement('div');
+    card.className = 'item-card' + (sel ? ' selected' : '');
+
+    const thumb = document.createElement('div'); thumb.className = 'thumb';
+    const bg = document.createElement('img'); bg.src = `art/Body${S.body}.png`; bg.alt = '';
+    const ii = document.createElement('img'); ii.src = `art/${item.id}.png`;
+    thumb.appendChild(bg); thumb.appendChild(ii);
+
+    const lbl = document.createElement('div');
+    lbl.className = 'card-lbl'; lbl.textContent = item.outfit;
+
+    const priceAmt = item.price.a ?? item.price.q;
+    const priceEl = document.createElement('div'); priceEl.className = 'card-price';
+    const pIcon = document.createElement('img');
+    pIcon.src = item.price.a ? 'art/UI/ame164.png' : 'art/UI/qua164.png';
+    priceEl.appendChild(pIcon);
+    priceEl.appendChild(document.createTextNode(priceAmt));
+
+    card.appendChild(thumb); card.appendChild(lbl); card.appendChild(priceEl);
+    card.onclick = () => {
+      S.storeSelected = sel ? null : item.id;
+      renderStoreGrid(catId); updateStoreFooter(); renderCharacter();
+    };
+    grid.appendChild(card);
+  });
+}
+
+function updateStoreFooter() {
+  const btn = $('buy-btn'), info = $('store-info');
+  if (!S.storeSelected) {
+    info.textContent = 'Select an item to buy';
+    btn.disabled = true; return;
+  }
+  const item = ITEMS.find(i => i.id === S.storeSelected);
+  const cost = item.price.a ? `${item.price.a} Amethyst` : `${item.price.q} Quartz`;
+  const canAfford = item.price.a ? S.a >= item.price.a : S.q >= item.price.q;
+  info.textContent = `${item.outfit} · ${item.cat} · ${cost}${canAfford ? '' : ' — not enough!'}`;
+  btn.disabled = !canAfford;
+}
+
+function buyItem() {
+  const item = ITEMS.find(i => i.id === S.storeSelected);
+  if (!item) return;
+  if (item.price.a) { if (S.a < item.price.a) return; S.a -= item.price.a; }
+  else              { if (S.q < item.price.q) return; S.q -= item.price.q; }
+  S.owned.add(item.id);
+  S.storeSelected = null;
+  writePlayerJson(); updateCurrency();
+  renderStoreGrid(S.storeCat); updateStoreFooter();
+}
+
+/* ═══════════════════════════════════════════
+   MUSIC
+═══════════════════════════════════════════ */
+function startMusic(listKey) {
+  S.musicList = listKey;
+  S.musicIdx = Math.floor(Math.random() * PLAYLISTS[listKey].length);
+  playTrack();
+}
+
+function playTrack() {
+  const bgm = $('bgm');
+  const path = PLAYLISTS[S.musicList][S.musicIdx % PLAYLISTS[S.musicList].length];
+  bgm.src = enc(path);
+  bgm.volume = +$('vol-slider').value;
+  bgm.play().catch(() => {});
+  $('track-name').textContent = path.split('/').pop().replace(/\.mp3$/i, '');
+}
+
+function toggleMusic() {
+  if (S.musicPlaying) {
+    S.musicPlaying = false;
+    const bgm = $('bgm');
+    bgm.pause();
+    bgm.src = '';
+    $('track-name').textContent = '♪ …';
+    $('music-toggle-btn').textContent = '▶';
+  } else {
+    S.musicPlaying = true;
+    $('music-toggle-btn').textContent = '■';
+    startMusic(S.musicList);
+  }
+}
+
+/* ═══════════════════════════════════════════
+   TIMER
+═══════════════════════════════════════════ */
+function selectPreset(mins) {
+  if (S.timerRunning) return;
+  S.timerPreset = mins;
+  S.timerSecs = mins * 60;
+  updateTimerDisplay();
+  document.querySelectorAll('.preset-btn').forEach(b =>
+    b.classList.toggle('active', +b.dataset.mins === mins));
+}
+
+function updateTimerDisplay() {
+  const m = Math.floor(S.timerSecs / 60);
+  const s = S.timerSecs % 60;
+  $('timer-display').textContent =
+    `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+function toggleTimer() {
+  S.timerRunning ? stopTimer() : beginTimer();
+}
+
+function beginTimer() {
+  S.timerRunning = true;
+  $('timer-toggle-btn').textContent = 'Stop';
+  renderNav();
+  S.timerInterval = setInterval(() => {
+    S.timerSecs--;
+    updateTimerDisplay();
+    if (S.timerSecs <= 0) {
+      clearInterval(S.timerInterval);
+      S.timerInterval = null;
+      S.timerRunning = false;
+      onTimerDone();
+    }
+  }, 1000);
+}
+
+function stopTimer() {
+  S.timerRunning = false;
+  clearInterval(S.timerInterval); S.timerInterval = null;
+  $('timer-toggle-btn').textContent = 'Start';
+  S.timerSecs = S.timerPreset * 60;
+  updateTimerDisplay(); renderNav();
+}
+
+function onTimerDone() {
+  try { const sfx = $('sfx'); sfx.src = 'music/timer.wav'; sfx.volume = +$('sfx-vol-slider').value; sfx.play().catch(() => {}); } catch(_) {}
+
+  const r = TIMER_REWARDS[S.timerPreset];
+  S.q += r.q; S.a += r.a;
+  writePlayerJson(); updateCurrency();
+
+  S.timerSecs = S.timerPreset * 60;
+  updateTimerDisplay();
+  $('timer-toggle-btn').textContent = 'Start';
+  renderNav();
+
+  const lines = $('reward-lines');
+  lines.innerHTML = '';
+  if (r.q) lines.innerHTML +=
+    `<div class="reward-line"><img src="art/UI/qua164.png" alt="quartz"> +${r.q}</div>`;
+  if (r.a) lines.innerHTML +=
+    `<div class="reward-line"><img src="art/UI/ame164.png" alt="amethyst"> +${r.a}</div>`;
+  const pop = $('reward-popup');
+  pop.classList.add('show');
+  setTimeout(() => pop.classList.remove('show'), 3400);
+}
+
+/* ═══════════════════════════════════════════
+   OUTFIT COMPLETION
+═══════════════════════════════════════════ */
+function checkOutfitCompletion() {
+  const eq = allEquipped();
+  for (const [name, items] of Object.entries(OUTFITS)) {
+    if (S.celebratedOutfits.has(name)) continue;
+    if (items.every(id => eq.has(id))) {
+      S.celebratedOutfits.add(name);
+      writePlayerJson();
+      celebrate(name);
+      break;
+    }
+  }
+}
+
+function celebrate(name) {
+  playChime(); launchSparkles();
+  $('cel-outfit').textContent = `${OUTFIT_EMO[name]} The "${name}" look!`;
+  $('celebration').classList.add('show');
+}
+
+function dismissCelebration() {
+  $('celebration').classList.remove('show');
+}
+
+function launchSparkles() {
+  const g = ['✨','⭐','💫','🌟','💖','🌸','🎀','💝','🌺','🎊'];
+  for (let i = 0; i < 42; i++) setTimeout(() => {
+    const sp = document.createElement('div');
+    sp.className = 'sparkle';
+    sp.textContent = g[Math.floor(Math.random() * g.length)];
+    const x = 10 + Math.random() * (innerWidth  - 20);
+    const y = 10 + Math.random() * (innerHeight - 20);
+    const dx = (Math.random() - .5) * 230;
+    const dy = -(60 + Math.random() * 210);
+    const r  = ((Math.random() - .5) * 720).toFixed(0) + 'deg';
+    const d  = (.7 + Math.random() * 1.1).toFixed(2) + 's';
+    sp.style.cssText +=
+      `left:${x}px;top:${y}px;--dx:${dx}px;--dy:${dy}px;--r:${r};--d:${d};`;
+    document.body.appendChild(sp);
+    setTimeout(() => sp.remove(), parseFloat(d) * 1000 + 120);
+  }, i * 35);
+}
+
+function playChime() {
+  try {
+    const ctx = new (AudioContext || webkitAudioContext)();
+    [523.25,659.25,783.99,1046.5,1318.5].forEach((f, i) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.type = 'sine'; o.frequency.value = f;
+      const t = ctx.currentTime + i * .13;
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(.2, t + .04);
+      g.gain.exponentialRampToValueAtTime(.001, t + .65);
+      o.start(t); o.stop(t + .65);
+    });
+  } catch(_) {}
+}
+
+/* ═══════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════ */
+async function main() {
+  // 1. Load clothes config — fatal if missing
+  try {
+    const res = await fetch('config/clothes.json');
+    if (!res.ok) throw new Error();
+    applyClothesConfig(await res.json());
+  } catch(_) {
+    $('config-error').style.display = 'flex';
+    return;
+  }
+
+  // 2. Load player config — soft fail, use defaults
+  let playerLoaded = false;
+  try {
+    const res = await fetch('config/player.json');
+    if (!res.ok) throw new Error();
+    applyPlayerConfig(await res.json());
+    playerLoaded = true;
+  } catch(_) {
+    applyDefaultState();
+    showSaveWarning('Save file not found — progress won\'t be saved.');
+  }
+
+  // 3. Restore write handle from previous session (silent, no user gesture)
+  await initSaveHandle();
+
+  // 4. If we loaded a player file but still can't write, warn
+  if (playerLoaded && !canSave) {
+    showSaveWarning('Save file not linked — progress won\'t be saved.');
+  }
+
+  // 5. Wire up UI
+  document.querySelectorAll('.preset-btn').forEach(btn =>
+    btn.addEventListener('click', () => selectPreset(+btn.dataset.mins)));
+  $('timer-toggle-btn').addEventListener('click', toggleTimer);
+  $('save-btn').addEventListener('click', saveOutfit);
+  $('buy-btn').addEventListener('click', buyItem);
+
+  $('vol-slider').addEventListener('input', e => {
+    $('bgm').volume = +e.target.value;
+  });
+
+  $('bgm').addEventListener('ended', () => {
+    if (!S.musicPlaying) return;
+    S.musicIdx = (S.musicIdx + 1) % PLAYLISTS[S.musicList].length;
+    playTrack();
+  });
+
+  $('music-toggle-btn').addEventListener('click', toggleMusic);
+
+  updateCurrency();
+  selectPreset(S.timerPreset);
+  $('bg').style.backgroundImage = "url('art/UI/room.png')";
+  renderNav();
+  renderCharacter();
+}
+
+main();
+</script>
+</body>
+</html>

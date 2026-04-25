@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://y4dl3nmqm88p"
+path="res://.godot/imported/Dreamloop Serenade (1).mp3-d75ba07d278cd4938f6fe8622b6c6462.mp3str"
+
+[deps]
+
+source_file="res://Resources/Music/room/Dreamloop Serenade (1).mp3"
+dest_files=["res://.godot/imported/Dreamloop Serenade (1).mp3-d75ba07d278cd4938f6fe8622b6c6462.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://bx3qscs5x8o38"
+path="res://.godot/imported/Magenta Glow (1).mp3-33acdfc050be88117ea65dd9eae9c1d1.mp3str"
+
+[deps]
+
+source_file="res://Resources/Music/room/Magenta Glow (1).mp3"
+dest_files=["res://.godot/imported/Magenta Glow (1).mp3-33acdfc050be88117ea65dd9eae9c1d1.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

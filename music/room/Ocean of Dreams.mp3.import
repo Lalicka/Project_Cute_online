@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://ixxvm18aoah"
+path="res://.godot/imported/Ocean of Dreams.mp3-2c02348b64c63a12a7053430b4780c3b.mp3str"
+
+[deps]
+
+source_file="res://Resources/Music/room/Ocean of Dreams.mp3"
+dest_files=["res://.godot/imported/Ocean of Dreams.mp3-2c02348b64c63a12a7053430b4780c3b.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

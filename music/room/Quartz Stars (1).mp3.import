@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://dblch05f07wdu"
+path="res://.godot/imported/Quartz Stars (1).mp3-55f815e3fdad49f41d0a567e3b1be4bd.mp3str"
+
+[deps]
+
+source_file="res://Resources/Music/room/Quartz Stars (1).mp3"
+dest_files=["res://.godot/imported/Quartz Stars (1).mp3-55f815e3fdad49f41d0a567e3b1be4bd.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

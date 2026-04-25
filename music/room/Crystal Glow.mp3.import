@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://bsmnwi22204li"
+path="res://.godot/imported/Crystal Glow.mp3-443629be8c910f582e37ee5c18d269dd.mp3str"
+
+[deps]
+
+source_file="res://Resources/Music/room/Crystal Glow.mp3"
+dest_files=["res://.godot/imported/Crystal Glow.mp3-443629be8c910f582e37ee5c18d269dd.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

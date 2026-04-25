@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://6uyc0xo6hfik"
+path="res://.godot/imported/Velvet Dreams (1).mp3-0dd5f40b87134be8ca7cecfec4110c5a.mp3str"
+
+[deps]
+
+source_file="res://Resources/Music/room/Velvet Dreams (1).mp3"
+dest_files=["res://.godot/imported/Velvet Dreams (1).mp3-0dd5f40b87134be8ca7cecfec4110c5a.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

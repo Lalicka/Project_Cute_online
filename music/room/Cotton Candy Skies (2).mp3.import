@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://bq0rh8vs7rrbb"
+path="res://.godot/imported/Cotton Candy Skies (2).mp3-8af0b7607762f53df3d905bd62e7d5a2.mp3str"
+
+[deps]
+
+source_file="res://Resources/Music/room/Cotton Candy Skies (2).mp3"
+dest_files=["res://.godot/imported/Cotton Candy Skies (2).mp3-8af0b7607762f53df3d905bd62e7d5a2.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4
