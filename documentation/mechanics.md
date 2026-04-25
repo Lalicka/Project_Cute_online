@@ -130,6 +130,20 @@ Timer state, music position, and volume levels are **not** persisted — they re
 `config/player.js` seeds the initial state the first time the game runs (no localStorage data
 yet). After that, localStorage is authoritative.
 
+**localStorage is scoped by origin.** On GitHub Pages this is `https://lalicka.github.io`
+(path-independent). On `file://` it is effectively scoped per file path in Chromium browsers,
+so moving the game folder typically gives the player a fresh save. Export/Import is the only
+durable way to move a save across paths or browsers.
+
+### Single-tab lock
+
+On launch, the game uses `BroadcastChannel('project-cute')` to detect another tab already
+running the game. If one is found, the new tab shows an "Already open" overlay and stops
+initializing — preventing two tabs from racing on `localStorage` writes and silently losing
+each other's saves. The owning tab listens for future probes for as long as it lives, and
+releases the channel on `beforeunload`. Browsers without `BroadcastChannel` fall through
+unprotected.
+
 ### Import / Export
 
 The 💾 button next to the player name opens the Import/Export modal.

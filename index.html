@@ -837,6 +837,17 @@ body { overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background
       </div>
     </div>
   </div>
+
+  <!-- TAB CONFLICT -->
+  <div id="tab-conflict" class="modal-overlay" style="display:none">
+    <div id="ic-box" class="modal-box">
+      <div id="ic-title">Already open</div>
+      <div id="ic-text">Project Cute is already running in another tab. To avoid losing progress, only one tab can play at a time.<br><br>Continue in the other tab, or close it and reload here.</div>
+      <div id="ic-buttons">
+        <button class="ic-btn ic-confirm" onclick="location.reload()">Reload</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <audio id="bgm"></audio>
@@ -1534,6 +1545,41 @@ function onTimerDone() {
 
 
 /* ═══════════════════════════════════════════
+   SINGLE-TAB LOCK
+═══════════════════════════════════════════ */
+// Prevents two tabs from running simultaneously and silently
+// overwriting each other's saves via localStorage. Uses
+// BroadcastChannel to detect a peer; falls through (no protection)
+// on browsers that lack the API.
+function claimTabLock() {
+  return new Promise(resolve => {
+    if (typeof BroadcastChannel === 'undefined') { resolve(true); return; }
+    const ch = new BroadcastChannel('project-cute');
+    let settled = false;
+    ch.onmessage = e => {
+      if (settled) {
+        // We own the lock — answer future probes.
+        if (e.data === 'who') ch.postMessage('here');
+        return;
+      }
+      if (e.data === 'here') {
+        // Another tab already owns it.
+        settled = true;
+        ch.close();
+        resolve(false);
+      }
+    };
+    ch.postMessage('who');
+    setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      window.addEventListener('beforeunload', () => ch.close());
+      resolve(true);
+    }, 200);
+  });
+}
+
+/* ═══════════════════════════════════════════
    INIT
 ═══════════════════════════════════════════ */
 async function main() {
@@ -1542,6 +1588,13 @@ async function main() {
     $('config-error').style.display = 'flex';
     return;
   }
+
+  // 2. Single-tab lock — bail early if another tab is running
+  if (!await claimTabLock()) {
+    $('tab-conflict').style.display = 'flex';
+    return;
+  }
+
   applyClothesConfig(window.CLOTHES_CONFIG);
 
   // 2. Seed state from player.js (or defaults), then override with localStorage
