@@ -7,6 +7,7 @@
 <link rel="icon" href="art/UI/avatar.png">
 <script src="config/clothes.js"></script>
 <script src="config/player.js"></script>
+<script src="config/music.js"></script>
 <style>
 /* ── FONTS ── */
 @font-face {
@@ -859,27 +860,11 @@ const CAT_EMOJI = {
 };
 const NAV_EMOJI = { room: '🏠', closet: '👗', store: '🛍️' };
 
+// Filenames live in config/music.js. Playback path is built per-scene
+// in playTrack() as `music/${scene}/${filename}`.
 const PLAYLISTS = {
-  room: [
-    'music/room/Cotton Candy Skies (1).mp3',
-    'music/room/Amethyst Dance.mp3',
-    'music/room/Crystal Glow.mp3',
-    'music/room/Glitter and Grace.mp3',
-    'music/room/Sakura Girl.mp3',
-    'music/room/Pink Fabric Dream.mp3',
-    'music/room/Cute Pink Dress.mp3',
-    'music/room/Dreamy Anime Girl.mp3',
-    'music/room/Diamonds in the Air.mp3',
-    'music/room/Project Cute.mp3',
-    'music/room/Quartz Stars.mp3',
-    'music/room/Amethyst Shimmer (1).mp3',
-  ],
-  store: [
-    'music/store/Cosmic Threads.mp3',
-    'music/store/Starlit Stiches.mp3',
-    'music/store/Bubble Bath Blues.mp3',
-    'music/store/Starlit Stiches (1).mp3',
-  ],
+  room:  (window.MUSIC_CONFIG && window.MUSIC_CONFIG.room)  || [],
+  store: (window.MUSIC_CONFIG && window.MUSIC_CONFIG.store) || [],
 };
 
 /* ═══════════════════════════════════════════
@@ -1438,17 +1423,21 @@ function buyItem() {
 ═══════════════════════════════════════════ */
 function startMusic(listKey) {
   S.musicList = listKey;
-  S.musicIdx = Math.floor(Math.random() * PLAYLISTS[listKey].length);
+  const len = PLAYLISTS[listKey]?.length || 0;
+  if (!len) return;
+  S.musicIdx = Math.floor(Math.random() * len);
   playTrack();
 }
 
 function playTrack() {
+  const list = PLAYLISTS[S.musicList];
+  if (!list || !list.length) return;
   const bgm = $('bgm');
-  const path = PLAYLISTS[S.musicList][S.musicIdx % PLAYLISTS[S.musicList].length];
-  bgm.src = enc(path);
+  const file = list[S.musicIdx % list.length];
+  bgm.src = enc(`music/${S.musicList}/${file}`);
   bgm.volume = +$('vol-slider').value;
   bgm.play().catch(() => {});
-  $('track-name').textContent = path.split('/').pop().replace(/\.mp3$/i, '');
+  $('track-name').textContent = file.replace(/\.mp3$/i, '');
 }
 
 function toggleMusic() {
@@ -1573,17 +1562,25 @@ async function main() {
 
   $('bgm').addEventListener('ended', () => {
     if (!S.musicPlaying) return;
-    S.musicIdx = (S.musicIdx + 1) % PLAYLISTS[S.musicList].length;
+    const len = PLAYLISTS[S.musicList]?.length || 0;
+    if (!len) return;
+    S.musicIdx = (S.musicIdx + 1) % len;
     playTrack();
   });
 
   updateCurrency();
   selectPreset(S.timerPreset);
   S.musicList = 'room';
-  S.musicIdx = PLAYLISTS.room.findIndex(p => p.includes('Project Cute'));
-  S.musicPlaying = true;
-  $('music-note').classList.remove('paused');
-  playTrack();
+  const launchIdx = PLAYLISTS.room.findIndex(f => f.includes('Project Cute'));
+  S.musicIdx = launchIdx >= 0 ? launchIdx : 0;
+  S.musicPlaying = PLAYLISTS.room.length > 0;
+  if (S.musicPlaying) {
+    $('music-note').classList.remove('paused');
+    playTrack();
+  } else {
+    $('music-note').classList.add('paused');
+    $('track-name').textContent = '♪ …';
+  }
   const resumeOnce = () => {
     const bgm = $('bgm');
     if (S.musicPlaying && bgm.paused) bgm.play().catch(() => {});

@@ -41,9 +41,11 @@ A Pomodoro-style countdown timer in the Room scene.
 
 Located in the left panel. Tracks switch automatically based on the active scene:
 
-- **Room scene** → plays from the `room/` playlist (12 tracks, shuffled)
-- **Store scene** → plays from the `store/` playlist (4 tracks, shuffled)
+- **Room scene** → plays from the `room/` playlist (shuffled; "Project Cute.mp3" is the launch track when present)
+- **Store scene** → plays from the `store/` playlist (shuffled)
 - **Closet scene** → continues whatever was playing in the previous scene
+
+Playlists are defined in `config/music.js` (loaded every launch). Each scene has an array of filenames; the game looks for those files in `music/<scene>/`. To add or remove tracks, drop the `.mp3` into the matching folder and edit `config/music.js`. If a list is empty, music for that scene is silently disabled.
 
 Controls:
 - **Play/Stop button** (music note icon) — toggles playback; icon animates while playing
