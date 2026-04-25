@@ -940,6 +940,15 @@ function loadState() {
   } catch(_) {}
 }
 
+/* ── Device-local preferences (not part of save data, not exported) ── */
+const LSP = { music:'dg2_pref_music', vol:'dg2_pref_vol', sfx:'dg2_pref_sfx' };
+function loadPref(key, fallback) {
+  try { const v = localStorage.getItem(key); return v == null ? fallback : v; } catch(_) { return fallback; }
+}
+function savePref(key, value) {
+  try { localStorage.setItem(key, value); } catch(_) {}
+}
+
 /* ── Import / Export ── */
 let pendingImportData = null;
 
@@ -1464,6 +1473,7 @@ function toggleMusic() {
     $('music-note').classList.remove('paused');
     startMusic(S.musicList);
   }
+  savePref(LSP.music, S.musicPlaying ? '1' : '0');
 }
 
 /* ═══════════════════════════════════════════
@@ -1609,9 +1619,23 @@ async function main() {
   $('save-btn').addEventListener('click', saveOutfit);
   $('buy-btn').addEventListener('click', buyItem);
 
+  // input → live behaviour (every pixel during drag)
+  // change → persistence (once, on release)
   $('vol-slider').addEventListener('input', e => {
     $('bgm').volume = +e.target.value;
   });
+  $('vol-slider').addEventListener('change', e => {
+    savePref(LSP.vol, e.target.value);
+  });
+  $('sfx-vol-slider').addEventListener('change', e => {
+    savePref(LSP.sfx, e.target.value);
+  });
+
+  // Apply persisted prefs to sliders before playTrack() reads them
+  const savedVol = loadPref(LSP.vol, null);
+  if (savedVol != null) $('vol-slider').value = savedVol;
+  const savedSfx = loadPref(LSP.sfx, null);
+  if (savedSfx != null) $('sfx-vol-slider').value = savedSfx;
 
   $('bgm').addEventListener('ended', () => {
     if (!S.musicPlaying) return;
@@ -1626,7 +1650,8 @@ async function main() {
   S.musicList = 'room';
   const launchIdx = PLAYLISTS.room.findIndex(f => f.includes('Project Cute'));
   S.musicIdx = launchIdx >= 0 ? launchIdx : 0;
-  S.musicPlaying = PLAYLISTS.room.length > 0;
+  const wantsMusic = loadPref(LSP.music, '1') === '1';
+  S.musicPlaying = wantsMusic && PLAYLISTS.room.length > 0;
   if (S.musicPlaying) {
     $('music-note').classList.remove('paused');
     playTrack();

@@ -125,7 +125,19 @@ All state is saved to `localStorage` with the key prefix `dg2_`. Saved keys:
 | `dg2_eq` | Equipped item IDs per category |
 | `dg2_name` | Player name |
 
-Timer state, music position, and volume levels are **not** persisted — they reset on reload.
+Timer state and current track position are **not** persisted — they reset on reload.
+
+#### Device-local preferences
+
+Three settings are stored separately as device-local preferences (prefix `dg2_pref_`). They are **not** part of the save data, so they are not included in Export/Import, do not appear in `player.js`, and persist across imports.
+
+| Key | Stores |
+|-----|--------|
+| `dg2_pref_music` | Music play/paused state (`'1'` / `'0'`) |
+| `dg2_pref_vol`   | Music volume slider value (0–1) |
+| `dg2_pref_sfx`   | Notification (timer bell) volume slider value (0–1) |
+
+Defaults: music plays, volume 0.15, sfx 0.5 (the values in the slider HTML).
 
 `config/player.js` seeds the initial state the first time the game runs (no localStorage data
 yet). After that, localStorage is authoritative.
