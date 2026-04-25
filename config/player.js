@@ -1,4 +1,5 @@
 window.PLAYER_CONFIG = {
+  "lastDate": "",
   "q": 0,
   "a": 0,
   "owned": [

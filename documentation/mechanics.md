@@ -37,6 +37,27 @@ A Pomodoro-style countdown timer in the Room scene.
 
 ---
 
+## Daily Reward
+
+Once per local calendar day, the player receives a bonus. The reward is a single roll:
+
+- **2/3 chance** → +20 Quartz
+- **1/3 chance** → +2 Amethyst
+
+**Triggers** — the check (`checkDailyReward()`) is called at:
+- The end of `main()`, gated on `S.name` being set (so brand-new players don't fire it behind the name-prompt modal).
+- The start of every `showScene()` call.
+
+Both call sites are idempotent — the function early-exits when `today <= lastDate`. A brand-new player (`lastDate: ''`) gets the reward on their first scene change after entering a name.
+
+**Popup** — reuses the timer-reward popup component with the title "Daily reward!". A small jingle (`music/jingle.wav`) plays through the `#sfx` audio element, so its volume follows the notification slider (`dg2_pref_sfx`). If the file is missing the popup still appears; the audio just silently fails.
+
+**Persistence** — the claim date (`YYYY-MM-DD`) is stored in the save data as `lastDate` and persists through Export/Import.
+
+There is no anti-cheat: the player can change their system clock or edit `localStorage` to claim again. This is intentional — the game is single-player with no competitive integrity to defend.
+
+---
+
 ## Music Player
 
 Located in the left panel. Tracks switch automatically based on the active scene:
@@ -124,6 +145,7 @@ All state is saved to `localStorage` with the key prefix `dg2_`. Saved keys:
 | `dg2_own` | Owned item IDs |
 | `dg2_eq` | Equipped item IDs per category |
 | `dg2_name` | Player name |
+| `dg2_lastDate` | Last date the daily reward was claimed (`YYYY-MM-DD`) |
 
 Timer state and current track position are **not** persisted — they reset on reload.
 

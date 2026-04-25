@@ -707,12 +707,12 @@ body { overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background
 
     <div class="currency-row">
       <div class="cpill">
-        <img src="art/UI/ame164.png" alt="amethyst">
-        <span id="ame-count">0</span>
-      </div>
-      <div class="cpill">
         <img src="art/UI/qua164.png" alt="quartz">
         <span id="qua-count">50</span>
+      </div>
+      <div class="cpill">
+        <img src="art/UI/ame164.png" alt="amethyst">
+        <span id="ame-count">0</span>
       </div>
     </div>
 
@@ -783,7 +783,7 @@ body { overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background
 
   <!-- REWARD -->
   <div id="reward-popup">
-    <h3>⏰ Time's up!</h3>
+    <h3 id="reward-title">⏰ Time's up!</h3>
     <div id="reward-lines"></div>
   </div>
 
@@ -898,12 +898,13 @@ const S = {
   musicIdx: 0,
   musicPlaying: false,
   name: '',
+  lastDate: '',
 };
 
 /* ═══════════════════════════════════════════
    PERSISTENCE — localStorage
 ═══════════════════════════════════════════ */
-const LS = { q:'dg2_q', a:'dg2_a', owned:'dg2_own', eq:'dg2_eq', name:'dg2_name' };
+const LS = { q:'dg2_q', a:'dg2_a', owned:'dg2_own', eq:'dg2_eq', name:'dg2_name', lastDate:'dg2_lastDate' };
 
 function persist() {
   try {
@@ -911,6 +912,7 @@ function persist() {
     localStorage.setItem(LS.a, S.a);
     localStorage.setItem(LS.owned, JSON.stringify([...S.owned]));
     localStorage.setItem(LS.name, S.name);
+    localStorage.setItem(LS.lastDate, S.lastDate || '');
     const obj = {};
     for (const [cat, set] of Object.entries(S.equipped)) obj[cat] = [...set];
     localStorage.setItem(LS.eq, JSON.stringify(obj));
@@ -937,6 +939,7 @@ function loadState() {
       if (bb) S.equipped.skin.add(bb);
     }
     const name = localStorage.getItem(LS.name); if (name) S.name = name;
+    const lastDate = localStorage.getItem(LS.lastDate); if (lastDate != null) S.lastDate = lastDate;
   } catch(_) {}
 }
 
@@ -961,6 +964,7 @@ function exportPlayer() {
     q: S.q, a: S.a,
     owned: [...S.owned],
     equipped: Object.fromEntries(Object.entries(S.equipped).map(([k, v]) => [k, [...v]])),
+    lastDate: S.lastDate,
   };
   const blob = new Blob(
     ['window.PLAYER_CONFIG = ' + JSON.stringify(data, null, 2) + ';\n'],
@@ -1066,6 +1070,7 @@ function applyDefaultState() {
   if (sh) S.equipped.hair.add(sh);
   if (sb) S.equipped.skin.add(sb);
   S.name = '';
+  S.lastDate = '';
 }
 
 function applyPlayerConfig(cfg) {
@@ -1079,6 +1084,7 @@ function applyPlayerConfig(cfg) {
     }
   }
   S.name = cfg.name ?? '';
+  S.lastDate = cfg.lastDate ?? '';
   if (S.equipped.face.size === 0) {
     const fb = STARTERS.find(id => ITEMS.find(i => i.id === id && i.cat === 'face'));
     if (fb) S.equipped.face.add(fb);
@@ -1130,6 +1136,7 @@ function updateCurrency() {
    SCENES
 ═══════════════════════════════════════════ */
 function showScene(scene) {
+  checkDailyReward();
   const wasStore = S.scene === 'store';
   S.scene = scene;
 
@@ -1542,6 +1549,11 @@ function onTimerDone() {
   document.querySelectorAll('.preset-btn').forEach(b => b.disabled = false);
   renderNav();
 
+  showRewardPopup("⏰ Time's up!", r);
+}
+
+function showRewardPopup(title, r) {
+  $('reward-title').textContent = title;
   const lines = $('reward-lines');
   lines.innerHTML = '';
   if (r.q) lines.innerHTML +=
@@ -1551,6 +1563,38 @@ function onTimerDone() {
   const pop = $('reward-popup');
   pop.classList.add('show');
   setTimeout(() => pop.classList.remove('show'), 3400);
+}
+
+/* ═══════════════════════════════════════════
+   DAILY REWARD
+═══════════════════════════════════════════ */
+// Local-date string YYYY-MM-DD (sortable, timezone-stable for the day rollover).
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear() + '-' +
+    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+    String(d.getDate()).padStart(2, '0');
+}
+
+function checkDailyReward() {
+  const today = todayStr();
+  if (today <= (S.lastDate || '')) return;
+  // 1/3 chance of 2 amethyst, 2/3 chance of 20 quartz.
+  const r = Math.random() < 1/3 ? { q: 0, a: 2 } : { q: 20, a: 0 };
+  S.q += r.q;
+  S.a += r.a;
+  S.lastDate = today;
+  persist();
+  updateCurrency();
+  // Jingle uses the same #sfx element as the timer bell, so it respects
+  // the notification-volume slider.
+  try {
+    const sfx = $('sfx');
+    sfx.src = 'music/jingle.wav';
+    sfx.volume = +$('sfx-vol-slider').value;
+    sfx.play().catch(() => {});
+  } catch(_) {}
+  showRewardPopup('Daily reward!', r);
 }
 
 
@@ -1676,6 +1720,7 @@ async function main() {
 
   if (S.name) {
     $('player-name').textContent = S.name;
+    checkDailyReward();
   } else {
     $('name-prompt').style.display = 'flex';
     setTimeout(() => $('name-input').focus(), 80);
