@@ -302,7 +302,8 @@ body { overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background
 .scene-panel {
   position: absolute;
   left: var(--panel-left);
-  top: 14px; bottom: 62px;
+  top: 0; bottom: 0;
+  padding: 14px 0;
   width: min(492px, calc(100vw - var(--panel-left) - 16px));
   z-index: 15;
   display: flex; flex-direction: column;
@@ -315,14 +316,13 @@ body { overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background
   opacity: 0; pointer-events: none; transform: scale(.97);
 }
 
-/* ── CLOSET ── */
-#closet-panel { flex-direction: row; }
+/* ── CLOSET / STORE ── */
+#closet-panel, #store-panel { flex-direction: row; }
 
-#cat-tabs {
+#cat-tabs, #store-cat-tabs {
   display: flex; flex-direction: column; gap: 3px;
-  padding: 14px 0 14px 0;
+  padding: 29px 0 14px 0;
   width: 48px; flex-shrink: 0;
-  overflow: hidden;
   position: relative; z-index: 2;
 }
 .cat-tab {
@@ -334,17 +334,16 @@ body { overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background
   padding: 8px 4px; cursor: pointer;
   text-align: center; line-height: 1;
   transition: background .14s, filter .14s;
-  margin-right: -2px;
 }
 .cat-tab:hover { filter: brightness(0.92); }
 .cat-tab.active {
   background: var(--panel-bg);
   border-color: rgba(255, 255, 255, 0.85);
   position: relative; z-index: 1;
+  margin-right: -2px;
+  pointer-events: none;
 }
-.cat-tab:active { transform: scale(.94); }
-
-#closet-content {
+#closet-content, #store-content {
   flex: 1; display: flex; flex-direction: column;
   overflow: hidden; padding: 10px 8px 10px 10px;
   background: var(--panel-bg);
@@ -359,66 +358,22 @@ body { overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background
   overflow-x: hidden; overflow-y: auto;
   scrollbar-gutter: stable;
 }
-#closet-grid {
+#closet-grid, #store-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 8px; align-content: start;
 }
-#closet-footer {
-  padding-top: 9px;
-  display: flex; flex-direction: column; align-items: center; gap: 5px;
-}
-#save-btn {
-  background: var(--action-btn);
-  border: 2px solid var(--action-border);
-  border-radius: 24px;
-  font-family: 'MilkyNice', cursive;
-  font-size: 1.5rem; font-weight: 800; color: var(--text);
-  padding: 9px 36px; cursor: pointer; min-height: 44px;
-  transition: all .15s;
-}
-#save-btn:hover { filter: brightness(0.94); }
-#save-btn:active { transform: scale(.96); }
-
-/* ── STORE ── */
-#store-panel { flex-direction: row; }
-
-#store-cat-tabs {
-  display: flex; flex-direction: column; gap: 3px;
-  padding: 14px 0 14px 0;
-  width: 48px; flex-shrink: 0;
-  overflow: hidden;
-  position: relative; z-index: 2;
-}
-
-#store-content {
-  flex: 1; display: flex; flex-direction: column;
-  overflow: hidden; padding: 10px 8px 10px 10px;
-  background: var(--panel-bg);
-  backdrop-filter: blur(10px);
-  border-radius: 22px;
-  border: 2px solid rgba(255, 255, 255, 0.85);
-  box-shadow: 0 8px 32px rgba(80, 0, 120, 0.22);
-  position: relative; z-index: 1;
-}
-
-#store-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  align-content: start;
-}
-#store-footer {
+#closet-footer, #store-footer {
   padding-top: 9px;
   display: flex; align-items: center; gap: 10px;
   border-top: 1px solid rgba(180, 120, 210, 0.7);
 }
-#store-info-col { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+#closet-info-col, #store-info-col { flex: 1; display: flex; flex-direction: column; gap: 2px; }
 #store-info {
   font-size: .76rem; font-weight: 600; color: var(--text);
   line-height: 1.4;
 }
-#buy-btn {
+#save-btn, #buy-btn {
   background: var(--action-btn);
   border: 2px solid var(--action-border);
   border-radius: 24px;
@@ -427,8 +382,8 @@ body { overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background
   padding: 9px 26px; min-height: 44px; min-width: 108px; cursor: pointer;
   transition: all .15s;
 }
-#buy-btn:hover:not(:disabled) { filter: brightness(0.94); }
-#buy-btn:active:not(:disabled) { transform: scale(.96); }
+#save-btn:hover, #buy-btn:hover:not(:disabled) { filter: brightness(0.94); }
+#save-btn:active, #buy-btn:active:not(:disabled) { transform: scale(.96); }
 #buy-btn:disabled { opacity: .45; cursor: default; }
 
 /* ── ITEM CARDS ── */
@@ -440,7 +395,7 @@ body { overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background
   display: flex; flex-direction: column;
   align-items: center;
   padding: 6px 5px 5px;
-  aspect-ratio: 3/4;
+  aspect-ratio: 1/2;
   position: relative;
   min-width: 0;
   transition: transform .14s, filter .14s;
@@ -505,7 +460,7 @@ body { overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background
   display: flex; flex-direction: column;
   align-items: center;
   padding: 6px 5px 5px;
-  aspect-ratio: 3/4;
+  aspect-ratio: 1/2;
   position: relative; overflow: hidden;
   min-width: 0;
   transition: transform .14s, filter .14s;
@@ -788,8 +743,10 @@ input[type="text"] { cursor: url('art/cursor/text.cur'), text !important; }
     <div id="closet-content">
       <div class="grid-wrap"><div id="closet-grid"></div></div>
       <div id="closet-footer">
+        <div id="closet-info-col">
+          <div class="panel-stats" id="closet-stats"></div>
+        </div>
         <button id="save-btn">Save</button>
-        <div class="panel-stats" id="closet-stats" style="width:100%;text-align:left"></div>
       </div>
     </div>
   </div>
