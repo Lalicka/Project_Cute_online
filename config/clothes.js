@@ -59,13 +59,13 @@ window.CLOTHES_CONFIG = {
     { "id": "Acc_1_Laura",    "cat": "acc",   "outfit": "Laura",    "z": 9,  "price": { "a": 3  } }
   ],
   "outfits": {
-    "Bertha":   ["Face_Bertha","Hair_Bertha","Dress_Bertha","Coat_Bertha","Shoes_Bertha","Acc_1_Bertha"],
-    "Courtney": ["Face_Courtney","Hair_Courtney","Dress_Courtney","Coat_Courtney","Pants_Courtney","Shoes_Courtney","Acc_1_Courtney","Acc_2_Courtney","Acc_3_Courtney","Acc_4_Courtney"],
+    "Pajama":   ["Face_Pajama","Hair_Pajama","Top_Pajama","Pants_Pajama"],
     "Lalicka":  ["Face_Lalicka","Hair_Lalicka","Dress_Lalicka","Shoes_Lalicka","Acc_1_Lalicka","Acc_2_Lalicka"],
     "Laura":    ["Face_Laura","Hair_Laura","Pants_Laura","Top_Laura","Shoes_Laura","Acc_1_Laura"],
-    "Pajama":   ["Face_Pajama","Hair_Pajama","Top_Pajama","Pants_Pajama"],
-    "Dafna":    ["Hair_Dafna","Top_Dafna","Pants_Dafna","Shoes_Dafna","Acc_1_Dafna","Acc_2_Dafna"],
-    "Amy":      ["Hair_Amy","Dress_Amy","Shoes_Amy"]
+    "Bertha":   ["Face_Bertha","Hair_Bertha","Dress_Bertha","Coat_Bertha","Shoes_Bertha","Acc_1_Bertha"],
+    "Courtney": ["Face_Courtney","Hair_Courtney","Dress_Courtney","Coat_Courtney","Pants_Courtney","Shoes_Courtney","Acc_1_Courtney","Acc_2_Courtney","Acc_3_Courtney","Acc_4_Courtney"],
+    "Amy":      ["Hair_Amy","Dress_Amy","Shoes_Amy"],
+    "Dafna":    ["Hair_Dafna","Top_Dafna","Pants_Dafna","Shoes_Dafna","Acc_1_Dafna","Acc_2_Dafna"]
   },
   "starters": ["Skin1","Skin2","Skin3","Skin4","Skin5","Face_Pajama","Hair_Pajama","Top_Pajama","Pants_Pajama"]
 };
