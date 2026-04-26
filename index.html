@@ -59,9 +59,7 @@ body { overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background
 #bg {
   position: absolute; inset: 0;
   background-size: cover; background-position: center;
-  transition: opacity 0.35s;
 }
-#bg.fade { opacity: 0; }
 
 /* ── LEFT PANEL ── */
 #left-panel {
@@ -479,7 +477,6 @@ body { overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background
   font-size: 11px; font-weight: 700; color: white;
 }
 .badge-eq  { background: #c2185b; }
-.badge-own { background: #4caf50; }
 
 .empty-msg {
   grid-column: 1 / -1;
@@ -500,8 +497,6 @@ body { overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background
 /* ── INLINE CURRENCY ICON ── */
 .inline-icon { width: 14px; height: 14px; object-fit: contain; vertical-align: middle; margin-left: 2px; }
 
-/* ── BODY CARDS ── */
-
 /* ── ALBUM CARDS ── */
 .album-card {
   background: var(--card);
@@ -518,7 +513,6 @@ body { overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background
 }
 .album-card.unlocked { cursor: pointer; }
 .album-card.unlocked:hover { transform: scale(1.04); filter: brightness(0.95); }
-.album-card.selected { background: var(--card-sel); border-color: var(--card-sel-border); box-shadow: 0 0 0 2px rgba(80,170,220,0.3); }
 .album-card.locked { filter: grayscale(0.6) brightness(0.82); }
 .album-card .thumb { position: relative; width: 100%; flex: 1; min-height: 0; }
 .album-card .thumb img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; }
@@ -822,11 +816,11 @@ input[type="text"] { cursor: url('art/cursor/text.cur'), text !important; }
   </div>
 
 
-  <!-- FATAL: clothes.json missing -->
+  <!-- FATAL: clothes.js missing -->
   <div id="config-error" style="display:none">
     <div id="config-error-box">
       <h2>⚠️ Config missing</h2>
-      <p><code>config/clothes.json</code> was not found.</p>
+      <p><code>config/clothes.js</code> was not found.</p>
       <p>Place it next to <code>index.html</code> and reload.</p>
     </div>
   </div>
@@ -886,12 +880,11 @@ input[type="text"] { cursor: url('art/cursor/text.cur'), text !important; }
 
 <audio id="bgm"></audio>
 <audio id="sfx"></audio>
-<audio id="press" src="music/press.mp3" preload="auto"></audio>
 <audio id="click" src="music/click.mp3" preload="auto"></audio>
 
 <script>
 /* ═══════════════════════════════════════════
-   DATA (populated from config/clothes.json)
+   DATA (populated from config/clothes.js)
 ═══════════════════════════════════════════ */
 let CATEGORIES  = [];
 let ITEMS       = [];
@@ -1143,8 +1136,6 @@ function allEquippedFrom(eq) {
   Object.values(eq).forEach(set => set.forEach(id => s.add(id)));
   return s;
 }
-
-function allEquipped() { return allEquippedFrom(S.equipped); }
 
 function initDraft() {
   CATEGORIES.forEach(c => { S.draft[c.id] = new Set(S.equipped[c.id]); });
@@ -1704,9 +1695,6 @@ function playSfxAudio(audioId) {
 function playClick() {
   if (!playSfxBuffer('music/click.mp3')) playSfxAudio('click');
 }
-function playPress() {
-  if (!playSfxBuffer('music/press.mp3')) playSfxAudio('press');
-}
 
 function onTimerDone() {
   // Alarm sound: usually already firing via the Web Audio scheduler. Only
@@ -1829,30 +1817,18 @@ async function main() {
 
   applyClothesConfig(window.CLOTHES_CONFIG);
 
-  // 2. Seed state from player.js (or defaults), then override with localStorage
+  // 3. Seed state from player.js (or defaults), then override with localStorage
   if (window.PLAYER_CONFIG) applyPlayerConfig(window.PLAYER_CONFIG);
   else applyDefaultState();
   loadState();
 
-  // 5. Wire up UI
+  // 4. Wire up UI
   document.querySelectorAll('.preset-btn').forEach(btn =>
     btn.addEventListener('click', () => selectPreset(+btn.dataset.mins)));
   $('timer-toggle-btn').addEventListener('click', toggleTimer);
   $('save-btn').addEventListener('click', saveOutfit);
   $('buy-btn').addEventListener('click', buyItem);
 
-  // Two-part button audio: press (pointerdown) → click (release). Both fire
-  // on the same set of <button> elements. `pointerdown` covers mouse + touch
-  // + pen with one listener. We gate the press handler on left-button only
-  // (e.button === 0) and on the button not being disabled, since some
-  // browsers still dispatch pointerdown to disabled buttons even though
-  // click is suppressed.
-  document.addEventListener('pointerdown', e => {
-    if (e.button !== 0) return;
-    const btn = e.target.closest('button');
-    if (!btn || btn.disabled) return;
-    playPress();
-  });
   document.addEventListener('click', e => {
     if (e.target.closest('button')) playClick();
   });
@@ -1867,8 +1843,7 @@ async function main() {
   // Pre-decode the alarm into an AudioBuffer so the first timer start is
   // instant. Fire-and-forget; subsequent calls are cached.
   loadAlarmBuffer();
-  // Same for the press/click SFX so the first button press is low-latency.
-  loadSfxBuffer('music/press.mp3');
+  // Same for the click SFX so the first button press is low-latency.
   loadSfxBuffer('music/click.mp3');
 
   // input → live behaviour (every pixel during drag)
