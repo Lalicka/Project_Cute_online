@@ -228,7 +228,7 @@ body { overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background
   padding: 6px 2px; cursor: pointer;
   transition: all .15s;
 }
-.preset-btn:hover { background: var(--btn-active); }
+.preset-btn:hover:not(:disabled) { background: var(--btn-active); }
 .preset-btn.active {
   background: var(--btn-active);
   border-color: #8020a0;
@@ -237,7 +237,6 @@ body { overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background
 }
 .preset-btn:active { transform: scale(.94); }
 .preset-btn:disabled { opacity: .42; cursor: default; }
-.preset-btn:disabled:hover { background: var(--btn); }
 .preset-btn:disabled:active { transform: none; }
 
 #timer-display {
@@ -279,7 +278,7 @@ body { overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background
   padding: 10px 12px; cursor: pointer;
   transition: all .15s; letter-spacing: .5px;
 }
-.nav-btn:hover { background: var(--btn-active); }
+.nav-btn:hover:not(:disabled) { background: var(--btn-active); }
 .nav-btn:active { transform: scale(.97); }
 .nav-btn:disabled { opacity: .42; cursor: default; }
 .nav-btn:disabled:active { transform: none; }
@@ -687,6 +686,41 @@ body { overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background
 .ic-cancel:hover  { background: var(--btn-active); }
 .ic-confirm { background: #d42060; border-color: #a01050; color: white; }
 .ic-confirm:hover { filter: brightness(0.92); }
+
+/* ── CUSTOM CURSORS ──
+   Uses the .cur files in art/cursor. Each rule supplies a system-cursor
+   fallback (default, pointer, etc.) for browsers that don't accept .cur
+   (notably older Safari). Animated .ani files are not browser-supported
+   and are therefore unused.
+
+   `!important` is used deliberately: these rules are the canonical
+   cursors for the game and need to override the many scattered
+   `cursor: pointer` declarations in earlier blocks (button-class rules,
+   slider rules, etc.). Among themselves the rules cascade normally —
+   the disabled rule wins on disabled buttons because it has higher
+   selector specificity than the generic link rule.
+*/
+body { cursor: url('art/cursor/normal.cur'), default !important; }
+button,
+.item-card,
+.album-card.unlocked,
+#music-note,
+#sfx-vol-label,
+#vol-slider,
+#sfx-vol-slider {
+  cursor: url('art/cursor/link.cur'), pointer !important;
+}
+#vol-slider::-webkit-slider-thumb,
+#sfx-vol-slider::-webkit-slider-thumb { cursor: url('art/cursor/link.cur'), pointer !important; }
+#vol-slider::-moz-range-thumb,
+#sfx-vol-slider::-moz-range-thumb     { cursor: url('art/cursor/link.cur'), pointer !important; }
+button:disabled,
+.nav-btn:disabled,
+.preset-btn:disabled,
+.album-card.locked {
+  cursor: url('art/cursor/unavaliable.cur'), not-allowed !important;
+}
+input[type="text"] { cursor: url('art/cursor/text.cur'), text !important; }
 </style>
 </head>
 <body>
@@ -1398,6 +1432,12 @@ function renderStoreGrid(catId) {
     const sel = S.storeSelected === item.id;
     const card = document.createElement('div');
     card.className = 'item-card' + (sel ? ' selected' : '');
+
+    if (sel) {
+      const b = document.createElement('div');
+      b.className = 'badge badge-eq'; b.textContent = '✓';
+      card.appendChild(b);
+    }
 
     const thumb = document.createElement('div'); thumb.className = 'thumb';
     const bg = document.createElement('img'); bg.src = `art/${[...S.equipped.skin][0]}.png`; bg.alt = '';
