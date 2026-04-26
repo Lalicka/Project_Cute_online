@@ -34,6 +34,8 @@ A Pomodoro-style countdown timer in the Room scene.
 - Navigation buttons are disabled while the timer is running.
 - Timer state is **not** saved — reloading the page resets it to the last selected preset.
 - The timer display uses a pill styled the same as the currency pills.
+- The countdown is anchored to wall-clock time (`Date.now()`), not the `setInterval` tick count, so background-tab throttling can't slow it down. A `visibilitychange` listener also runs the tick the moment the tab returns to the foreground, so a session that finished while hidden fires its reward popup immediately on return.
+- The alarm sound is scheduled on the **Web Audio API clock** (via `AudioBufferSourceNode.start(when)`), which is not throttled by background tabs. This means the bell rings on time even while the user is in another tab. The alarm buffer is pre-fetched and decoded on launch (`loadAlarmBuffer()`) so the first timer start is instant; if the fetch fails, the existing `<audio>` element acts as a fallback when `tickTimer()` detects completion.
 
 ---
 

@@ -852,6 +852,8 @@ body { overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background
 
 <audio id="bgm"></audio>
 <audio id="sfx"></audio>
+<audio id="press" src="music/press.mp3" preload="auto"></audio>
+<audio id="click" src="music/click.mp3" preload="auto"></audio>
 
 <script>
 /* ═══════════════════════════════════════════
@@ -891,6 +893,7 @@ const S = {
   timerRunning: false,
   timerSecs: 25 * 60,
   timerInterval: null,
+  timerEndAt: 0,
   storeSelected: null,
   closetCat: 'skin',
   storeCat: 'face',
@@ -1508,24 +1511,36 @@ function toggleTimer() {
 
 function beginTimer() {
   S.timerRunning = true;
+  // Anchor to wall-clock time. Background tab throttling can slow setInterval
+  // ticks, but the math here recomputes from Date.now() so we never drift.
+  S.timerEndAt = Date.now() + S.timerSecs * 1000;
+  // Schedule the alarm on the AudioContext clock so it fires on time even
+  // while the tab is hidden (background-throttling-immune). Fire-and-forget.
+  scheduleAlarm(S.timerEndAt).catch(() => {});
   $('timer-toggle-btn').textContent = 'Stop';
   document.querySelectorAll('.preset-btn').forEach(b => b.disabled = true);
   renderNav();
-  S.timerInterval = setInterval(() => {
-    S.timerSecs--;
-    updateTimerDisplay();
-    if (S.timerSecs <= 0) {
-      clearInterval(S.timerInterval);
-      S.timerInterval = null;
-      S.timerRunning = false;
-      onTimerDone();
-    }
-  }, 1000);
+  S.timerInterval = setInterval(tickTimer, 1000);
+  tickTimer(); // run once immediately so first display is fresh
+}
+
+function tickTimer() {
+  if (!S.timerRunning) return;
+  const remaining = Math.max(0, Math.ceil((S.timerEndAt - Date.now()) / 1000));
+  S.timerSecs = remaining;
+  updateTimerDisplay();
+  if (remaining <= 0) {
+    clearInterval(S.timerInterval);
+    S.timerInterval = null;
+    S.timerRunning = false;
+    onTimerDone();
+  }
 }
 
 function stopTimer() {
   S.timerRunning = false;
   clearInterval(S.timerInterval); S.timerInterval = null;
+  cancelAlarm();
   $('timer-toggle-btn').textContent = 'Start';
   document.querySelectorAll('.preset-btn').forEach(b => b.disabled = false);
   S.timerSecs = S.timerPreset * 60;
@@ -1536,8 +1551,131 @@ function previewSfx() {
   try { const sfx = $('sfx'); sfx.src = 'music/timer.wav'; sfx.volume = +$('sfx-vol-slider').value; sfx.play().catch(() => {}); } catch(_) {}
 }
 
+/* ── Web Audio alarm scheduler ──
+   The timer alarm needs to fire at an exact wall-clock moment, even while
+   the tab is hidden. setInterval/setTimeout are heavily throttled in
+   background tabs (down to ~1/min), so the existing <audio> playback path
+   would fire late by up to a minute. AudioContext's clock is *not* throttled,
+   so scheduling via `source.start(ctx.currentTime + delay)` gives sample-
+   accurate playback regardless of tab visibility.
+*/
+let audioCtx = null;
+let alarmBuffer = null;
+let alarmBufferPromise = null;
+let scheduledAlarm = null;
+let alarmScheduled = false;
+
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function loadAlarmBuffer() {
+  if (alarmBuffer) return Promise.resolve(alarmBuffer);
+  if (alarmBufferPromise) return alarmBufferPromise;
+  alarmBufferPromise = (async () => {
+    try {
+      const res = await fetch('music/timer.wav');
+      const arr = await res.arrayBuffer();
+      alarmBuffer = await getAudioCtx().decodeAudioData(arr);
+      return alarmBuffer;
+    } catch(_) { return null; }
+  })();
+  return alarmBufferPromise;
+}
+
+async function scheduleAlarm(endTimeMs) {
+  alarmScheduled = false;
+  const buffer = await loadAlarmBuffer();
+  if (!buffer) return; // fall back path will fire <audio> on tick-completion
+  const ctx = getAudioCtx();
+  if (ctx.state === 'suspended') {
+    try { await ctx.resume(); } catch(_) {}
+  }
+  const delaySec = Math.max(0, (endTimeMs - Date.now()) / 1000);
+  const source = ctx.createBufferSource();
+  const gain = ctx.createGain();
+  gain.gain.value = +$('sfx-vol-slider').value;
+  source.buffer = buffer;
+  source.connect(gain).connect(ctx.destination);
+  source.start(ctx.currentTime + delaySec);
+  scheduledAlarm = source;
+  alarmScheduled = true;
+}
+
+function cancelAlarm() {
+  if (scheduledAlarm) {
+    try { scheduledAlarm.stop(); } catch(_) {}
+    scheduledAlarm = null;
+  }
+  alarmScheduled = false;
+}
+
+/* ── Generic Web Audio SFX (low-latency one-shots) ──
+   HTML <audio> elements add 30–100 ms latency per play(). Web Audio
+   BufferSource.start() is sample-accurate (<5 ms). Buffers are decoded once
+   and cached; each play allocates a fresh BufferSource (cheap, GC'd after).
+*/
+const sfxBuffers = new Map();
+const sfxLoadPromises = new Map();
+
+function loadSfxBuffer(path) {
+  if (sfxBuffers.has(path)) return Promise.resolve(sfxBuffers.get(path));
+  if (sfxLoadPromises.has(path)) return sfxLoadPromises.get(path);
+  const p = (async () => {
+    try {
+      const res = await fetch(path);
+      const arr = await res.arrayBuffer();
+      const buf = await getAudioCtx().decodeAudioData(arr);
+      sfxBuffers.set(path, buf);
+      return buf;
+    } catch(_) { return null; }
+  })();
+  sfxLoadPromises.set(path, p);
+  return p;
+}
+
+function playSfxBuffer(path) {
+  const buf = sfxBuffers.get(path);
+  if (!buf) return false; // caller should fall back
+  const ctx = getAudioCtx();
+  if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+  const source = ctx.createBufferSource();
+  const gain = ctx.createGain();
+  gain.gain.value = +$('sfx-vol-slider').value;
+  source.buffer = buf;
+  source.connect(gain).connect(ctx.destination);
+  source.start();
+  return true;
+}
+
+// Fallback for browsers/origins where fetch() can't load the buffer
+// (notably Chromium on file://). Uses the pre-existing <audio> elements,
+// which load via the browser's media pipeline rather than fetch.
+function playSfxAudio(audioId) {
+  try {
+    const a = $(audioId);
+    a.currentTime = 0;
+    a.volume = +$('sfx-vol-slider').value;
+    a.play().catch(() => {});
+  } catch(_) {}
+}
+
+function playClick() {
+  if (!playSfxBuffer('music/click.mp3')) playSfxAudio('click');
+}
+function playPress() {
+  if (!playSfxBuffer('music/press.mp3')) playSfxAudio('press');
+}
+
 function onTimerDone() {
-  try { const sfx = $('sfx'); sfx.src = 'music/timer.wav'; sfx.volume = +$('sfx-vol-slider').value; sfx.play().catch(() => {}); } catch(_) {}
+  // Alarm sound: usually already firing via the Web Audio scheduler. Only
+  // fall back to the <audio> element if scheduling failed (e.g. fetch error).
+  if (!alarmScheduled) {
+    try { const sfx = $('sfx'); sfx.src = 'music/timer.wav'; sfx.volume = +$('sfx-vol-slider').value; sfx.play().catch(() => {}); } catch(_) {}
+  }
+  alarmScheduled = false;
+  scheduledAlarm = null;
 
   const r = TIMER_REWARDS[S.timerPreset];
   S.q += r.q; S.a += r.a;
@@ -1662,6 +1800,36 @@ async function main() {
   $('timer-toggle-btn').addEventListener('click', toggleTimer);
   $('save-btn').addEventListener('click', saveOutfit);
   $('buy-btn').addEventListener('click', buyItem);
+
+  // Two-part button audio: press (pointerdown) → click (release). Both fire
+  // on the same set of <button> elements. `pointerdown` covers mouse + touch
+  // + pen with one listener. We gate the press handler on left-button only
+  // (e.button === 0) and on the button not being disabled, since some
+  // browsers still dispatch pointerdown to disabled buttons even though
+  // click is suppressed.
+  document.addEventListener('pointerdown', e => {
+    if (e.button !== 0) return;
+    const btn = e.target.closest('button');
+    if (!btn || btn.disabled) return;
+    playPress();
+  });
+  document.addEventListener('click', e => {
+    if (e.target.closest('button')) playClick();
+  });
+
+  // When the tab becomes visible again, tick the timer immediately so a
+  // background-completed countdown fires the moment the user returns instead
+  // of waiting for the next throttled interval tick.
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) tickTimer();
+  });
+
+  // Pre-decode the alarm into an AudioBuffer so the first timer start is
+  // instant. Fire-and-forget; subsequent calls are cached.
+  loadAlarmBuffer();
+  // Same for the press/click SFX so the first button press is low-latency.
+  loadSfxBuffer('music/press.mp3');
+  loadSfxBuffer('music/click.mp3');
 
   // input → live behaviour (every pixel during drag)
   // change → persistence (once, on release)
