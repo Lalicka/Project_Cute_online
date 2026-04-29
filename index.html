@@ -8,6 +8,7 @@
 <script src="config/clothes.js"></script>
 <script src="config/player.js"></script>
 <script src="config/music.js"></script>
+<script src="config/version.js"></script>
 <style>
 /* ── FONTS ── */
 @font-face {
@@ -386,6 +387,51 @@ body { overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background
 #save-btn:active, #buy-btn:active:not(:disabled) { transform: scale(.96); }
 #buy-btn:disabled { opacity: .45; cursor: default; }
 
+#clear-btn {
+  background: var(--btn);
+  border: 2px solid var(--btn-border);
+  border-radius: 24px;
+  font-family: 'MilkyNice', cursive;
+  font-size: 1.1rem; font-weight: 800; color: var(--text);
+  padding: 8px 16px; min-height: 44px; cursor: pointer;
+  transition: all .15s;
+}
+#clear-btn:hover { background: var(--btn-active); }
+#clear-btn:active { transform: scale(.96); }
+
+/* ── UI TOGGLE ── */
+#ui-toggle-btn {
+  position: fixed;
+  right: 10px; top: 10px;
+  width: 30px; height: 30px;
+  background: var(--btn);
+  border: 1.5px solid var(--btn-border);
+  border-radius: 8px;
+  font-size: .9rem;
+  color: var(--text);
+  cursor: pointer;
+  z-index: 50;
+  opacity: 0.5;
+  display: flex;
+  align-items: center; justify-content: center;
+  padding: 0;
+  transition: background .12s, opacity .12s;
+}
+#ui-toggle-btn:hover { background: var(--btn-active); opacity: 1; }
+body.ui-hidden #left-panel { display: none; }
+
+/* ── VERSION TAG ── */
+#version-tag {
+  position: fixed;
+  right: 6px; bottom: 4px;
+  font-size: .55rem;
+  font-family: 'Courier New', monospace;
+  color: rgba(255, 255, 255, 0.4);
+  pointer-events: none;
+  z-index: 100;
+  letter-spacing: .5px;
+}
+
 /* ── ITEM CARDS ── */
 .item-card {
   background: var(--card);
@@ -746,6 +792,7 @@ input[type="text"] { cursor: url('art/cursor/text.cur'), text !important; }
         <div id="closet-info-col">
           <div class="panel-stats" id="closet-stats"></div>
         </div>
+        <button id="clear-btn">Clear</button>
         <button id="save-btn">Save</button>
       </div>
     </div>
@@ -833,6 +880,12 @@ input[type="text"] { cursor: url('art/cursor/text.cur'), text !important; }
       </div>
     </div>
   </div>
+
+  <!-- UI HIDE/SHOW TOGGLE (Room only) -->
+  <button id="ui-toggle-btn" onclick="toggleUI()" title="Hide / show interface">👁</button>
+
+  <!-- VERSION TAG (always visible) -->
+  <div id="version-tag"></div>
 </div>
 
 <audio id="bgm"></audio>
@@ -1284,6 +1337,19 @@ function toggleEquip(item) {
 function saveOutfit() {
   CATEGORIES.forEach(c => { S.equipped[c.id] = new Set(S.draft[c.id]); });
   persist();
+}
+
+function clearDraft() {
+  CATEGORIES.forEach(c => {
+    if (c.id === 'skin' || c.id === 'face' || c.id === 'hair') return;
+    S.draft[c.id] = new Set();
+  });
+  renderCharacter();
+  renderClosetGrid(S.closetCat);
+}
+
+function toggleUI() {
+  document.body.classList.toggle('ui-hidden');
 }
 
 function renderAlbumGrid() {
@@ -1775,6 +1841,7 @@ async function main() {
     btn.addEventListener('click', () => selectPreset(+btn.dataset.mins)));
   $('timer-toggle-btn').addEventListener('click', toggleTimer);
   $('save-btn').addEventListener('click', saveOutfit);
+  $('clear-btn').addEventListener('click', clearDraft);
   $('buy-btn').addEventListener('click', buyItem);
 
   document.addEventListener('click', e => {
@@ -1849,6 +1916,7 @@ async function main() {
   document.addEventListener('click', resumeOnce);
   document.addEventListener('keydown', resumeOnce);
   $('bg').style.backgroundImage = "url('art/UI/room.png')";
+  if (window.VERSION_CONFIG) $('version-tag').textContent = 'v' + window.VERSION_CONFIG;
   renderNav();
   renderCharacter();
   $('char-stage').addEventListener('click', e => {
