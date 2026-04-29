@@ -21,6 +21,7 @@ window.CLOTHES_CONFIG = {
     { "id": "Face_Lalicka",   "cat": "face",  "outfit": "Lalicka",  "z": 7,  "price": { "a": 3  } },
     { "id": "Face_Laura",     "cat": "face",  "outfit": "Laura",    "z": 7,  "price": { "q": 35 } },
     { "id": "Face_Pajama",    "cat": "face",  "outfit": "Pajama",   "z": 7,  "price": { "q": 0  } },
+    { "id": "Face_Maccuka",   "cat": "face",  "outfit": "Maccuka",  "z": 7,  "price": { "a": 7  } },
     { "id": "Hair_Bertha",    "cat": "hair",  "outfit": "Bertha",   "z": 8,  "price": { "q": 20 } },
     { "id": "Hair_Courtney",  "cat": "hair",  "outfit": "Courtney", "z": 8,  "price": { "a": 5  } },
     { "id": "Hair_Lalicka",   "cat": "hair",  "outfit": "Lalicka",  "z": 8,  "price": { "q": 30 } },
@@ -28,6 +29,7 @@ window.CLOTHES_CONFIG = {
     { "id": "Hair_Laura",     "cat": "hair",  "outfit": "Laura",    "z": 8,  "price": { "q": 25 } },
     { "id": "Hair_Pajama",    "cat": "hair",  "outfit": "Pajama",   "z": 8,  "price": { "q": 0  } },
     { "id": "Hair_Dafna",     "cat": "hair",  "outfit": "Dafna",    "z": 8,  "price": { "q": 20 } },
+    { "id": "Hair_Maccuka",   "cat": "hair",  "outfit": "Maccuka",  "z": 8,  "price": { "q": 25 } },
     { "id": "Dress_Bertha",   "cat": "dress", "outfit": "Bertha",   "z": 4,  "price": { "q": 20 } },
     { "id": "Dress_Courtney", "cat": "dress", "outfit": "Courtney", "z": 4,  "price": { "a": 4  } },
     { "id": "Dress_Lalicka",  "cat": "dress", "outfit": "Lalicka",  "z": 4,  "price": { "q": 25 } },
@@ -35,10 +37,12 @@ window.CLOTHES_CONFIG = {
     { "id": "Top_Laura",      "cat": "top",   "outfit": "Laura",    "z": 5,  "price": { "q": 15 } },
     { "id": "Top_Pajama",     "cat": "top",   "outfit": "Pajama",   "z": 5,  "price": { "q": 0  } },
     { "id": "Top_Dafna",      "cat": "top",   "outfit": "Dafna",    "z": 5,  "price": { "q": 15 } },
+    { "id": "Top_Maccuka",    "cat": "top",   "outfit": "Maccuka",  "z": 5,  "price": { "q": 15 } },
     { "id": "Pants_Courtney", "cat": "pants", "outfit": "Courtney", "z": 4,  "price": { "q": 25 } },
     { "id": "Pants_Laura",    "cat": "pants", "outfit": "Laura",    "z": 4,  "price": { "q": 15 } },
     { "id": "Pants_Pajama",   "cat": "pants", "outfit": "Pajama",   "z": 4,  "price": { "q": 0  } },
     { "id": "Pants_Dafna",    "cat": "pants", "outfit": "Dafna",    "z": 4,  "price": { "q": 15 } },
+    { "id": "Pants_Maccuka",  "cat": "pants", "outfit": "Maccuka",  "z": 4,  "price": { "q": 20 } },
     { "id": "Coat_Bertha",    "cat": "coat",  "outfit": "Bertha",   "z": 6,  "price": { "q": 20 } },
     { "id": "Coat_Courtney",  "cat": "coat",  "outfit": "Courtney", "z": 6,  "price": { "q": 30 } },
     { "id": "Shoes_Bertha",   "cat": "shoes", "outfit": "Bertha",   "z": 3,  "price": { "q": 20 } },
@@ -47,6 +51,7 @@ window.CLOTHES_CONFIG = {
     { "id": "Shoes_Amy",      "cat": "shoes", "outfit": "Amy",      "z": 3,  "price": { "q": 20 } },
     { "id": "Shoes_Laura",    "cat": "shoes", "outfit": "Laura",    "z": 3,  "price": { "q": 10 } },
     { "id": "Shoes_Dafna",    "cat": "shoes", "outfit": "Dafna",    "z": 3,  "price": { "q": 15 } },
+    { "id": "Shoes_Maccuka",  "cat": "shoes", "outfit": "Maccuka",  "z": 3,  "price": { "a": 4  } },
     { "id": "Acc_1_Bertha",   "cat": "acc",   "outfit": "Bertha",   "z": 2,  "price": { "q": 5  } },
     { "id": "Acc_1_Dafna",    "cat": "acc",   "outfit": "Dafna",    "z": 9,  "price": { "q": 10 } },
     { "id": "Acc_2_Dafna",    "cat": "acc",   "outfit": "Dafna",    "z": 2,  "price": { "q": 5  } },
@@ -56,7 +61,11 @@ window.CLOTHES_CONFIG = {
     { "id": "Acc_4_Courtney", "cat": "acc",   "outfit": "Courtney", "z": 2,  "price": { "a": 3  } },
     { "id": "Acc_1_Lalicka",  "cat": "acc",   "outfit": "Lalicka",  "z": 2,  "price": { "q": 5  } },
     { "id": "Acc_2_Lalicka",  "cat": "acc",   "outfit": "Lalicka",  "z": 2,  "price": { "q": 10 } },
-    { "id": "Acc_1_Laura",    "cat": "acc",   "outfit": "Laura",    "z": 9,  "price": { "a": 3  } }
+    { "id": "Acc_1_Laura",    "cat": "acc",   "outfit": "Laura",    "z": 9,  "price": { "a": 3  } },
+    { "id": "Acc_1_Maccuka",  "cat": "acc",   "outfit": "Maccuka",  "z": 2,  "price": { "q": 5  } },
+    { "id": "Acc_2_Maccuka",  "cat": "acc",   "outfit": "Maccuka",  "z": 9,  "price": { "q": 10 } },
+    { "id": "Acc_3_Maccuka",  "cat": "acc",   "outfit": "Maccuka",  "z": 10, "price": { "q": 10 } },
+    { "id": "Acc_4_Maccuka",  "cat": "acc",   "outfit": "Maccuka",  "z": 2,  "price": { "a": 2  } }
   ],
   "outfits": {
     "Pajama":   ["Face_Pajama","Hair_Pajama","Top_Pajama","Pants_Pajama"],
@@ -65,7 +74,8 @@ window.CLOTHES_CONFIG = {
     "Bertha":   ["Face_Bertha","Hair_Bertha","Dress_Bertha","Coat_Bertha","Shoes_Bertha","Acc_1_Bertha"],
     "Courtney": ["Face_Courtney","Hair_Courtney","Dress_Courtney","Coat_Courtney","Pants_Courtney","Shoes_Courtney","Acc_1_Courtney","Acc_2_Courtney","Acc_3_Courtney","Acc_4_Courtney"],
     "Amy":      ["Hair_Amy","Dress_Amy","Shoes_Amy"],
-    "Dafna":    ["Hair_Dafna","Top_Dafna","Pants_Dafna","Shoes_Dafna","Acc_1_Dafna","Acc_2_Dafna"]
+    "Dafna":    ["Hair_Dafna","Top_Dafna","Pants_Dafna","Shoes_Dafna","Acc_1_Dafna","Acc_2_Dafna"],
+    "Maccuka":  ["Face_Maccuka","Hair_Maccuka","Top_Maccuka","Pants_Maccuka","Shoes_Maccuka","Acc_1_Maccuka","Acc_2_Maccuka","Acc_3_Maccuka","Acc_4_Maccuka"]
   },
   "starters": ["Skin1","Skin2","Skin3","Skin4","Skin5","Face_Pajama","Hair_Pajama","Top_Pajama","Pants_Pajama"]
 };
