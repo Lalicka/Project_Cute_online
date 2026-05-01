@@ -1188,14 +1188,12 @@ function loadState() {
       const obj = JSON.parse(eq);
       for (const [cat, arr] of Object.entries(obj)) if (S.equipped[cat]) S.equipped[cat] = new Set(arr);
     }
-    if (S.equipped.face.size === 0) {
-      const fb = STARTERS.find(id => ITEMS.find(i => i.id === id && i.cat === 'face'));
-      if (fb) S.equipped.face.add(fb);
-    }
-    if (S.equipped.skin.size === 0) {
-      const bb = STARTERS.find(id => ITEMS.find(i => i.id === id && i.cat === 'skin'));
-      if (bb) S.equipped.skin.add(bb);
-    }
+    ['face', 'skin'].forEach(cat => {
+      if (S.equipped[cat].size === 0) {
+        const id = firstStarterInCat(cat);
+        if (id) S.equipped[cat].add(id);
+      }
+    });
     const name = localStorage.getItem(LS.name); if (name) S.name = name;
     const lastDate = localStorage.getItem(LS.lastDate); if (lastDate != null) S.lastDate = lastDate;
     const cd = localStorage.getItem(LS.cooldowns);
@@ -1365,12 +1363,10 @@ function applyDefaultState() {
   S.q = 50; S.a = 0;
   S.owned = new Set(STARTERS);
   CATEGORIES.forEach(c => { S.equipped[c.id] = new Set(); S.draft[c.id] = new Set(); });
-  const sf = STARTERS.find(id => ITEMS.find(i => i.id === id && i.cat === 'face'));
-  const sh = STARTERS.find(id => ITEMS.find(i => i.id === id && i.cat === 'hair'));
-  const sb = STARTERS.find(id => ITEMS.find(i => i.id === id && i.cat === 'skin'));
-  if (sf) S.equipped.face.add(sf);
-  if (sh) S.equipped.hair.add(sh);
-  if (sb) S.equipped.skin.add(sb);
+  ['face', 'hair', 'skin'].forEach(cat => {
+    const id = firstStarterInCat(cat);
+    if (id) S.equipped[cat].add(id);
+  });
   S.name = '';
   S.lastDate = '';
   S.cooldowns = {};
@@ -1389,14 +1385,12 @@ function applyPlayerConfig(cfg) {
   S.name = cfg.name ?? '';
   S.lastDate = cfg.lastDate ?? '';
   S.cooldowns = cfg.cooldowns ?? {};
-  if (S.equipped.face.size === 0) {
-    const fb = STARTERS.find(id => ITEMS.find(i => i.id === id && i.cat === 'face'));
-    if (fb) S.equipped.face.add(fb);
-  }
-  if (S.equipped.skin.size === 0) {
-    const bb = STARTERS.find(id => ITEMS.find(i => i.id === id && i.cat === 'skin'));
-    if (bb) S.equipped.skin.add(bb);
-  }
+  ['face', 'skin'].forEach(cat => {
+    if (S.equipped[cat].size === 0) {
+      const id = firstStarterInCat(cat);
+      if (id) S.equipped[cat].add(id);
+    }
+  });
 }
 
 /* ═══════════════════════════════════════════
@@ -1404,6 +1398,16 @@ function applyPlayerConfig(cfg) {
 ═══════════════════════════════════════════ */
 const $ = id => document.getElementById(id);
 const enc = p => p.split('/').map(encodeURIComponent).join('/');
+
+function firstStarterInCat(cat) {
+  return STARTERS.find(id => ITEMS.some(i => i.id === id && i.cat === cat));
+}
+
+// Closet uses the draft skin (preview); other scenes use the equipped one.
+function currentSkinId() {
+  const set = S.scene === 'closet' ? S.draft.skin : S.equipped.skin;
+  return [...set][0];
+}
 
 function allEquippedFrom(eq) {
   const s = new Set();
@@ -1719,7 +1723,7 @@ function renderClosetGrid(catId) {
 
     const thumb = document.createElement('div'); thumb.className = 'thumb';
     const bg = document.createElement('img');
-    bg.src = `art/${[...S.draft.skin][0]}.png`; bg.alt = '';
+    bg.src = `art/${currentSkinId()}.png`; bg.alt = '';
     const ii = document.createElement('img');
     ii.src = `art/${item.id}.png`;
     thumb.appendChild(bg); thumb.appendChild(ii);
@@ -1776,7 +1780,7 @@ function renderAlbumGrid() {
 
     const thumb = document.createElement('div'); thumb.className = 'thumb';
     const skinImg = document.createElement('img');
-    skinImg.src = `art/${[...S.draft.skin][0]}.png`;
+    skinImg.src = `art/${currentSkinId()}.png`;
     skinImg.style.zIndex = '0';
     thumb.appendChild(skinImg);
     ITEMS.filter(i => itemIds.includes(i.id))
@@ -1868,7 +1872,7 @@ function renderStoreGrid(catId) {
     }
 
     const thumb = document.createElement('div'); thumb.className = 'thumb';
-    const bg = document.createElement('img'); bg.src = `art/${[...S.equipped.skin][0]}.png`; bg.alt = '';
+    const bg = document.createElement('img'); bg.src = `art/${currentSkinId()}.png`; bg.alt = '';
     const ii = document.createElement('img'); ii.src = `art/${item.id}.png`;
     thumb.appendChild(bg); thumb.appendChild(ii);
 
@@ -1977,6 +1981,14 @@ function updateTimerDisplay() {
     `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }
 
+// Toggles the start/stop button label, preset button enable state, and nav
+// disable state — all of which flip together when the timer starts or stops.
+function setTimerUI(running) {
+  $('timer-toggle-btn').textContent = running ? 'Stop' : 'Start';
+  document.querySelectorAll('.preset-btn').forEach(b => b.disabled = running);
+  renderNav();
+}
+
 function toggleTimer() {
   S.timerRunning ? stopTimer() : beginTimer();
 }
@@ -1986,9 +1998,7 @@ function beginTimer() {
   // Anchor to wall-clock time. Background tab throttling can slow setInterval
   // ticks, but the math here recomputes from Date.now() so we never drift.
   S.timerEndAt = Date.now() + S.timerSecs * 1000;
-  $('timer-toggle-btn').textContent = 'Stop';
-  document.querySelectorAll('.preset-btn').forEach(b => b.disabled = true);
-  renderNav();
+  setTimerUI(true);
   S.timerInterval = setInterval(tickTimer, 1000);
   // Foreground precision: setTimeout fires close to endTimeMs (typically
   // <50 ms jitter) so the alarm doesn't wait up to a full second for the
@@ -2017,15 +2027,12 @@ function stopTimer() {
   S.timerRunning = false;
   clearInterval(S.timerInterval); S.timerInterval = null;
   clearTimeout(S.timerEndTimeout); S.timerEndTimeout = null;
-  $('timer-toggle-btn').textContent = 'Start';
-  document.querySelectorAll('.preset-btn').forEach(b => b.disabled = false);
   S.timerSecs = S.timerPreset * 60;
-  updateTimerDisplay(); renderNav();
+  updateTimerDisplay();
+  setTimerUI(false);
 }
 
-function previewSfx() {
-  try { const sfx = $('sfx'); sfx.src = 'music/timer.wav'; sfx.volume = +$('sfx-vol-slider').value; sfx.play().catch(() => {}); } catch(_) {}
-}
+function previewSfx() { playSfxFromUrl('music/timer.wav'); }
 
 /* ── Alarm playback ──
    The alarm is fired strictly when tickTimer detects the timer has ended.
@@ -2075,7 +2082,7 @@ function playAlarm() {
     source.connect(gain).connect(audioCtx.destination);
     source.start();
   } else {
-    try { const sfx = $('sfx'); sfx.src = 'music/timer.wav'; sfx.volume = +$('sfx-vol-slider').value; sfx.play().catch(() => {}); } catch(_) {}
+    playSfxFromUrl('music/timer.wav');
   }
 }
 
@@ -2129,6 +2136,17 @@ function playSfxAudio(audioId) {
   } catch(_) {}
 }
 
+// One-shot via the shared #sfx <audio> element, picking up the current src.
+// Used by previewSfx, playJingle, and the playAlarm fallback path.
+function playSfxFromUrl(url) {
+  try {
+    const sfx = $('sfx');
+    sfx.src = url;
+    sfx.volume = +$('sfx-vol-slider').value;
+    sfx.play().catch(() => {});
+  } catch(_) {}
+}
+
 function playClick() {
   if (!playSfxBuffer('music/click.mp3')) playSfxAudio('click');
 }
@@ -2142,9 +2160,7 @@ function onTimerDone() {
 
   S.timerSecs = S.timerPreset * 60;
   updateTimerDisplay();
-  $('timer-toggle-btn').textContent = 'Start';
-  document.querySelectorAll('.preset-btn').forEach(b => b.disabled = false);
-  renderNav();
+  setTimerUI(false);
 
   showRewardPopup("⏰ Time's up!", r);
 }
@@ -2182,14 +2198,7 @@ function todayStr() {
 
 // Jingle uses the same #sfx element as the timer bell, so it respects
 // the notification-volume slider.
-function playJingle() {
-  try {
-    const sfx = $('sfx');
-    sfx.src = 'music/jingle.wav';
-    sfx.volume = +$('sfx-vol-slider').value;
-    sfx.play().catch(() => {});
-  } catch(_) {}
-}
+function playJingle() { playSfxFromUrl('music/jingle.wav'); }
 
 function checkDailyReward() {
   const today = todayStr();
