@@ -1111,7 +1111,10 @@ const NAV_EMOJI = { room: '🏠', closet: '👗', store: '🛍️', games: '🎮
 // Per-scene config: where Back leads, what bg to show, what music plays.
 // Scenes not listed in SCENE_MUSIC_LIST and not in SILENT_SCENES inherit
 // the previous scene's music (current behaviour for closet).
-const BACK_TARGET = { closet: 'room', store: 'town', arcade: 'town', game: 'arcade' };
+// Town nav is hidden until the town/arcade/memory work is finished, so
+// Store's Back goes straight to room. The town/arcade/game entries are
+// kept for when the Town button comes back.
+const BACK_TARGET = { closet: 'room', store: 'room', arcade: 'town', game: 'arcade' };
 const SCENE_BG = {
   room:   'art/UI/room.png',
   closet: 'art/UI/room.png',
@@ -1409,6 +1412,18 @@ function currentSkinId() {
   return [...set][0];
 }
 
+// An item is one or more sprite layers. By default a single PNG named after
+// the item id, rendered at the item's z. Items can declare extra `layers`
+// for multi-PNG sprites (e.g. a dress with a separate over-arm bow that
+// needs to render above the hair).
+function itemLayers(item) {
+  const out = [{ src: `art/${item.id}.png`, z: item.z }];
+  if (item.layers) {
+    for (const layer of item.layers) out.push({ src: `art/${layer.id}.png`, z: layer.z });
+  }
+  return out;
+}
+
 function allEquippedFrom(eq) {
   const s = new Set();
   Object.values(eq).forEach(set => set.forEach(id => s.add(id)));
@@ -1535,7 +1550,9 @@ function renderNav() {
     nav.appendChild(b);
   };
   if (S.scene === 'room') {
-    mk('Town',   { emoji: NAV_EMOJI.town,   onClick: () => showScene('town') });
+    // Town nav is hidden until town/arcade/memory work is finished.
+    // Restore the original Store button so players can still shop.
+    mk('Store',  { emoji: NAV_EMOJI.store,  onClick: () => showScene('store') });
     mk('Closet', { emoji: NAV_EMOJI.closet, onClick: () => showScene('closet') });
   } else if (S.scene === 'town') {
     // Navigation handled by the in-world Home/Store/Arcade buttons.
@@ -1656,12 +1673,13 @@ function renderCharacter() {
   const eq = getDisplayEquipped();
 
   ITEMS.filter(i => eq.has(i.id))
+    .flatMap(itemLayers)
     .sort((a, b) => a.z - b.z)
-    .forEach(item => {
+    .forEach(({ src, z }) => {
       const img = document.createElement('img');
       img.className = 'layer';
-      img.src = `art/${item.id}.png`;
-      img.style.zIndex = String(item.z);
+      img.src = src;
+      img.style.zIndex = String(z);
       stage.appendChild(img);
     });
 }
@@ -1724,9 +1742,13 @@ function renderClosetGrid(catId) {
     const thumb = document.createElement('div'); thumb.className = 'thumb';
     const bg = document.createElement('img');
     bg.src = `art/${currentSkinId()}.png`; bg.alt = '';
-    const ii = document.createElement('img');
-    ii.src = `art/${item.id}.png`;
-    thumb.appendChild(bg); thumb.appendChild(ii);
+    thumb.appendChild(bg);
+    itemLayers(item).sort((a, b) => a.z - b.z).forEach(({ src, z }) => {
+      const ii = document.createElement('img');
+      ii.src = src;
+      ii.style.zIndex = String(z);
+      thumb.appendChild(ii);
+    });
 
     const lbl = document.createElement('div');
     lbl.className = 'card-lbl'; lbl.textContent = item.outfit;
@@ -1784,11 +1806,12 @@ function renderAlbumGrid() {
     skinImg.style.zIndex = '0';
     thumb.appendChild(skinImg);
     ITEMS.filter(i => itemIds.includes(i.id))
+      .flatMap(itemLayers)
       .sort((a, b) => a.z - b.z)
-      .forEach(item => {
+      .forEach(({ src, z }) => {
         const img = document.createElement('img');
-        img.src = `art/${item.id}.png`;
-        img.style.zIndex = String(item.z);
+        img.src = src;
+        img.style.zIndex = String(z);
         thumb.appendChild(img);
       });
 
@@ -1873,8 +1896,13 @@ function renderStoreGrid(catId) {
 
     const thumb = document.createElement('div'); thumb.className = 'thumb';
     const bg = document.createElement('img'); bg.src = `art/${currentSkinId()}.png`; bg.alt = '';
-    const ii = document.createElement('img'); ii.src = `art/${item.id}.png`;
-    thumb.appendChild(bg); thumb.appendChild(ii);
+    thumb.appendChild(bg);
+    itemLayers(item).sort((a, b) => a.z - b.z).forEach(({ src, z }) => {
+      const ii = document.createElement('img');
+      ii.src = src;
+      ii.style.zIndex = String(z);
+      thumb.appendChild(ii);
+    });
 
     const lbl = document.createElement('div');
     lbl.className = 'card-lbl'; lbl.textContent = item.outfit;
@@ -2264,7 +2292,7 @@ function preloadVisualAssets() {
     'art/UI/ame164.png',
     'art/UI/avatar.png',
   ];
-  ITEMS.forEach(item => urls.push(`art/${item.id}.png`));
+  ITEMS.forEach(item => itemLayers(item).forEach(({ src }) => urls.push(src)));
 
   const imgPromises = urls.map(url => new Promise(resolve => {
     const img = new Image();
@@ -2279,16 +2307,26 @@ function preloadVisualAssets() {
 /* ═══════════════════════════════════════════
    INIT
 ═══════════════════════════════════════════ */
+// Reveal a fatal-state modal that must show before normal init completes.
+// The loading screen sits on top of every modal (z-index 10000) on purpose
+// — it covers asset pop-in until preload finishes — so any modal shown
+// before that point has to dismiss the loading screen explicitly, otherwise
+// the user sees a frozen splash with no apparent cause.
+function showFatalModal(id) {
+  $('loading-screen').classList.add('hidden');
+  $(id).style.display = 'flex';
+}
+
 async function main() {
   // 1. Load clothes config — fatal if missing
   if (!window.CLOTHES_CONFIG) {
-    $('config-error').style.display = 'flex';
+    showFatalModal('config-error');
     return;
   }
 
   // 2. Single-tab lock — bail early if another tab is running
   if (!await claimTabLock()) {
-    $('tab-conflict').style.display = 'flex';
+    showFatalModal('tab-conflict');
     return;
   }
 

@@ -42,6 +42,7 @@ Each item is one entry in the `items` array.
 | `outfit` | string | The named outfit this item is part of (used by the Album). |
 | `z` | number | Render layer — see Z-layer tiers in [mechanics.md](mechanics.md). |
 | `price` | object | `{ "q": N }` for Quartz, `{ "a": N }` for Amethyst. Use `{ "q": 0 }` for free items. |
+| `layers` | array (optional) | Extra sprite layers for items composed of more than one PNG. Each entry is `{ "id": "<PNG basename>", "z": N }`. The main `id` PNG is always rendered too — `layers` only adds extras. Useful when one part of an item needs a different z-tier than the rest (e.g. a dress's bow that must render above the hair). |
 
 **Adding a new item:**
 
@@ -49,6 +50,18 @@ Each item is one entry in the `items` array.
 2. Add the entry to the `items` array with the correct `cat`, `z`, and `price`.
 3. If the item belongs to an outfit, add its `id` to the matching entry in `outfits`.
 4. If it should be available from the start, add its `id` to both `starters` in `clothes.js` and to `owned` in `player.js`.
+
+**Multi-layer item example:**
+
+```js
+{ "id": "Dress_Bow", "cat": "dress", "outfit": "Bow", "z": 4, "price": { "q": 30 },
+  "layers": [
+    { "id": "Dress_Bow_Front", "z": 9 }
+  ]
+}
+```
+
+This renders `art/Dress_Bow.png` at z=4 (under the hair) and `art/Dress_Bow_Front.png` at z=9 (above the hair) as a single equippable item. The player owns or doesn't own the whole item — extra layers can't be bought separately.
 
 ---
 

@@ -65,7 +65,12 @@ window.CLOTHES_CONFIG = {
     { "id": "Acc_1_Maccuka",  "cat": "acc",   "outfit": "Maccuka",  "z": 2,  "price": { "q": 5  } },
     { "id": "Acc_2_Maccuka",  "cat": "acc",   "outfit": "Maccuka",  "z": 9,  "price": { "q": 10 } },
     { "id": "Acc_3_Maccuka",  "cat": "acc",   "outfit": "Maccuka",  "z": 10, "price": { "q": 10 } },
-    { "id": "Acc_4_Maccuka",  "cat": "acc",   "outfit": "Maccuka",  "z": 2,  "price": { "a": 2  } }
+    { "id": "Acc_4_Maccuka",  "cat": "acc",   "outfit": "Maccuka",  "z": 2,  "price": { "a": 2  } },
+    { "id": "Coat_Janet",     "cat": "coat",  "outfit": "Janet",    "z": 6,  "price": { "q": 50 }, "layers": [{ "id": "Coat_Janet_1", "z": 4 },{ "id": "Coat_Janet_2", "z": 0.5 }] },
+    { "id": "Hair_Janet",     "cat": "hair",  "outfit": "Janet",    "z": 8,  "price": { "q": 30 }, "layers": [{ "id": "Hair_Janet_1", "z": 0.5 }] },
+    { "id": "Top_Janet",      "cat": "top",   "outfit": "Janet",    "z": 5,  "price": { "q": 15 } },
+    { "id": "Pants_Janet",    "cat": "pants", "outfit": "Janet",    "z": 4,  "price": { "q": 20 } },
+    { "id": "Shoes_Janet",    "cat": "shoes", "outfit": "Janet",    "z": 3,  "price": { "q": 15 } }
   ],
   "outfits": {
     "Pajama":   ["Face_Pajama","Hair_Pajama","Top_Pajama","Pants_Pajama"],
@@ -75,7 +80,8 @@ window.CLOTHES_CONFIG = {
     "Courtney": ["Face_Courtney","Hair_Courtney","Dress_Courtney","Coat_Courtney","Pants_Courtney","Shoes_Courtney","Acc_1_Courtney","Acc_2_Courtney","Acc_3_Courtney","Acc_4_Courtney"],
     "Amy":      ["Hair_Amy","Dress_Amy","Shoes_Amy"],
     "Dafna":    ["Hair_Dafna","Top_Dafna","Pants_Dafna","Shoes_Dafna","Acc_1_Dafna","Acc_2_Dafna"],
-    "Maccuka":  ["Face_Maccuka","Hair_Maccuka","Top_Maccuka","Pants_Maccuka","Shoes_Maccuka","Acc_1_Maccuka","Acc_2_Maccuka","Acc_3_Maccuka","Acc_4_Maccuka"]
+    "Maccuka":  ["Face_Maccuka","Hair_Maccuka","Top_Maccuka","Pants_Maccuka","Shoes_Maccuka","Acc_1_Maccuka","Acc_2_Maccuka","Acc_3_Maccuka","Acc_4_Maccuka"],
+    "Janet":    ["Coat_Janet","Hair_Janet","Top_Janet","Pants_Janet","Shoes_Janet"]
   },
   "starters": ["Skin1","Skin2","Skin3","Skin4","Skin5","Face_Pajama","Hair_Pajama","Top_Pajama","Pants_Pajama"]
 };
