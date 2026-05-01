@@ -9,6 +9,7 @@
 <script src="config/player.js"></script>
 <script src="config/music.js"></script>
 <script src="config/version.js"></script>
+<script src="games/memory.js"></script>
 <style>
 /* ── FONTS ── */
 @font-face {
@@ -299,6 +300,86 @@ body { overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background
   transform: scale(1.6);
   transform-origin: center top;
 }
+#char-stage.hidden { display: none; }
+
+/* ── TOWN / ARCADE WORLD OVERLAYS ──
+   Sit inside #world like the character — anchored to the 16:9 background,
+   not to the viewport. Use vh/percent units so they scale with the bg.
+*/
+#town-stage, #arcade-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+}
+#town-stage.hidden, #arcade-stage.hidden { display: none; }
+
+.town-btn {
+  position: absolute;
+  width: 22%;
+  aspect-ratio: 2.4 / 1;
+  bottom: 18%;
+  background: var(--btn);
+  border: 3px solid var(--btn-border);
+  border-radius: 18px;
+  font-family: 'MilkyNice', cursive;
+  font-size: 2.2vh;
+  font-weight: 800;
+  color: var(--text);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  text-align: center;
+  line-height: 1.3;
+  padding: 0;
+  transition: filter .15s, transform .15s;
+}
+.town-btn:hover { filter: brightness(0.92); }
+.town-btn:active { transform: scale(.96); }
+#town-home   { left: 10%; }
+#town-store  { left: 39%; }
+#town-arcade { left: 68%; }
+
+#arcade-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8vh 6vw;
+}
+#arcade-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16vh, 22vh));
+  gap: 2vh;
+  max-width: 100%;
+}
+.arcade-card {
+  position: relative;
+  background: var(--btn);
+  border: 3px solid var(--btn-border);
+  border-radius: 16px;
+  padding: 2vh 1vh;
+  aspect-ratio: 1;
+  font-family: 'MilkyNice', cursive;
+  color: var(--text);
+  cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 0.8vh;
+  text-align: center;
+  transition: filter .15s, transform .15s;
+}
+.arcade-card:hover:not(:disabled) { filter: brightness(0.92); }
+.arcade-card:active:not(:disabled) { transform: scale(.97); }
+.arcade-card:disabled { opacity: 0.6; cursor: default; }
+.arcade-card-icon { font-size: 5vh; line-height: 1; }
+.arcade-card-name { font-size: 2vh; font-weight: 800; }
+.arcade-card-cooldown {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(58, 12, 90, 0.55);
+  color: white; font-weight: 800; font-size: 2vh;
+  letter-spacing: .3px;
+  border-radius: 13px;
+  pointer-events: none;
+}
+
 /* ── SCENE PANELS ── */
 .scene-panel {
   position: absolute;
@@ -398,6 +479,75 @@ body { overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background
 }
 #clear-btn:hover { background: var(--btn-active); }
 #clear-btn:active { transform: scale(.96); }
+
+/* ── GAME SCENE ── */
+#game-panel { flex-direction: column; }
+#game-content {
+  flex: 1; display: flex; flex-direction: column;
+  overflow: hidden; padding: 14px 14px;
+  background: var(--panel-bg);
+  backdrop-filter: blur(10px);
+  border-radius: 22px;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 8px 32px rgba(80, 0, 120, 0.22);
+}
+#game-header { text-align: center; margin-bottom: 12px; }
+#game-title {
+  font-family: 'MilkyNice', cursive;
+  font-size: 1.4rem; font-weight: 800; color: var(--text);
+}
+#game-host {
+  flex: 1; min-height: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+#game-footer {
+  padding-top: 10px;
+  display: flex; justify-content: center; gap: 10px;
+  border-top: 1px solid rgba(180, 120, 210, 0.7);
+}
+#game-start-btn {
+  background: var(--action-btn);
+  border: 2px solid var(--action-border);
+  border-radius: 24px;
+  font-family: 'MilkyNice', cursive;
+  font-size: 1.2rem; font-weight: 800; color: var(--text);
+  padding: 9px 22px; min-height: 44px; cursor: pointer;
+  transition: all .15s;
+}
+#game-start-btn:hover { filter: brightness(0.94); }
+#game-start-btn:active { transform: scale(.96); }
+
+/* Memory game */
+.memory-board {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  width: 100%;
+  max-width: 320px;
+  aspect-ratio: 1;
+}
+.memory-card {
+  background: var(--btn-active);
+  border: 2px solid rgba(255, 255, 255, 0.52);
+  border-radius: 12px;
+  font-size: 1.6rem;
+  color: var(--text);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  padding: 0;
+  transition: background .14s, transform .14s;
+  aspect-ratio: 1;
+}
+.memory-card:hover { filter: brightness(0.92); }
+.memory-card.revealed {
+  background: var(--card);
+  border-color: var(--card-border);
+}
+.memory-card.matched {
+  background: var(--card-sel);
+  border-color: var(--card-sel-border);
+  cursor: default;
+}
 
 /* ── UI TOGGLE ── */
 #ui-toggle-btn {
@@ -521,27 +671,9 @@ body.ui-hidden .scene-panel { display: none; }
 .album-card .card-lbl { font-size: .62rem; font-weight: 700; color: var(--text); text-align: center; padding: 2px 2px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
 .album-progress { font-size: .58rem; font-weight: 600; color: var(--text); opacity: .6; text-align: center; padding-bottom: 2px; }
 
-/* ── REWARD POPUP ── */
-#reward-popup {
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%) scale(.5);
-  background: rgba(255, 242, 255, .97);
-  border: 3px solid rgba(200, 150, 230, .8);
-  border-radius: 22px;
-  padding: 22px 38px;
-  text-align: center;
-  z-index: 60;
-  box-shadow: 0 8px 40px rgba(120, 0, 160, .35);
-  opacity: 0;
-  pointer-events: none;
-  transition: transform .35s cubic-bezier(.34,1.56,.64,1), opacity .22s;
-}
-#reward-popup.show {
-  transform: translate(-50%, -50%) scale(1);
-  opacity: 1;
-}
-#reward-popup h3 { font-size: 1.25rem; color: var(--text); margin-bottom: 10px; }
+/* ── REWARD MODAL ── */
+#reward-box { padding: 22px 28px 18px; min-width: 240px; text-align: center; }
+#reward-box h3 { font-size: 1.1rem; font-weight: 800; color: var(--text); margin-bottom: 10px; }
 .reward-line {
   display: flex; align-items: center; justify-content: center;
   gap: 9px; font-size: 1.1rem; font-weight: 800; color: var(--text); margin: 4px 0;
@@ -662,12 +794,12 @@ body.ui-hidden .scene-panel { display: none; }
 .io-opt-icon { font-size: 1.25rem; flex-shrink: 0; }
 .io-opt strong { display: block; font-size: .86rem; font-weight: 800; color: var(--text); }
 .io-opt small   { font-size: .68rem; color: var(--text); opacity: .6; }
-#io-close-btn {
+#io-close-btn, #reward-close-btn {
   position: absolute; top: 11px; right: 13px;
   background: none; border: none; font-size: 1rem;
   color: var(--text); opacity: .45; cursor: pointer; line-height: 1;
 }
-#io-close-btn:hover { opacity: .9; }
+#io-close-btn:hover, #reward-close-btn:hover { opacity: .9; }
 
 /* Import confirm */
 #ic-box { padding: 28px 30px 22px; max-width: 330px; text-align: center; }
@@ -682,6 +814,39 @@ body.ui-hidden .scene-panel { display: none; }
 .ic-cancel:hover  { background: var(--btn-active); }
 .ic-confirm { background: #d42060; border-color: #a01050; color: white; }
 .ic-confirm:hover { filter: brightness(0.92); }
+
+/* ── LOADING SCREEN ──
+   Visible from first paint; main() removes it once all visual assets
+   (UI images, every clothing PNG, fonts) have finished loading.
+*/
+#loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: #1a001a url('art/UI/loading.png') center / cover no-repeat;
+  transition: opacity 0.4s;
+}
+#loading-screen.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Update notification — mirrors the io-modal (import/export) style */
+#update-box { padding: 22px 22px 16px; min-width: 258px; max-width: 380px; }
+#update-title {
+  font-size: 1.05rem; font-weight: 800; color: var(--text);
+  text-align: center; margin-bottom: 14px;
+}
+#update-text {
+  font-size: .82rem; color: var(--text); opacity: .82;
+  line-height: 1.65; text-align: left; white-space: pre-line;
+}
+#update-close-btn {
+  position: absolute; top: 11px; right: 13px;
+  background: none; border: none; font-size: 1rem;
+  color: var(--text); opacity: .45; cursor: pointer; line-height: 1;
+}
+#update-close-btn:hover { opacity: .9; }
 
 /* ── CUSTOM CURSORS ──
    Uses the .cur files in art/cursor. Each rule supplies a system-cursor
@@ -720,12 +885,21 @@ input[type="text"] { cursor: url('art/cursor/text.cur'), text !important; }
 </style>
 </head>
 <body>
+<div id="loading-screen"></div>
 <div id="game">
 
-  <!-- WORLD: background + character, scales fit-height -->
+  <!-- WORLD: background + character + scene-specific overlays, scales fit-height -->
   <div id="world">
     <div id="bg"></div>
     <div id="char-stage"></div>
+    <div id="town-stage" class="hidden">
+      <button class="town-btn" id="town-home">🏠<br>Home</button>
+      <button class="town-btn" id="town-store">🛍️<br>Store</button>
+      <button class="town-btn" id="town-arcade">🎮<br>Arcade</button>
+    </div>
+    <div id="arcade-stage" class="hidden">
+      <div id="arcade-list"></div>
+    </div>
   </div>
 
   <!-- LEFT PANEL -->
@@ -814,10 +988,24 @@ input[type="text"] { cursor: url('art/cursor/text.cur'), text !important; }
     </div>
   </div>
 
+  <!-- GAME -->
+  <div id="game-panel" class="scene-panel hidden">
+    <div id="game-content">
+      <div id="game-header"><div id="game-title">Game</div></div>
+      <div id="game-host"></div>
+      <div id="game-footer">
+        <button id="game-start-btn">Start</button>
+      </div>
+    </div>
+  </div>
+
   <!-- REWARD -->
-  <div id="reward-popup">
-    <h3 id="reward-title">⏰ Time's up!</h3>
-    <div id="reward-lines"></div>
+  <div id="reward-modal" class="modal-overlay" style="display:none">
+    <div id="reward-box" class="modal-box">
+      <button id="reward-close-btn" onclick="closeRewardPopup()">✕</button>
+      <h3 id="reward-title">⏰ Time's up!</h3>
+      <div id="reward-lines"></div>
+    </div>
   </div>
 
 
@@ -882,6 +1070,15 @@ input[type="text"] { cursor: url('art/cursor/text.cur'), text !important; }
     </div>
   </div>
 
+  <!-- UPDATE NOTIFICATION -->
+  <div id="update-notif" class="modal-overlay" style="display:none">
+    <div id="update-box" class="modal-box">
+      <button id="update-close-btn" onclick="closeUpdateNotif()">✕</button>
+      <div id="update-title"></div>
+      <div id="update-text"></div>
+    </div>
+  </div>
+
   <!-- UI HIDE/SHOW TOGGLE (Room only) -->
   <button id="ui-toggle-btn" onclick="toggleUI()" title="Hide / show interface">👁</button>
 
@@ -909,7 +1106,22 @@ const CAT_EMOJI = {
   skin: '🧍', face: '😊', hair: '💇', dress: '👗',
   top: '👚', pants: '👖', coat: '🧥', shoes: '👟', acc: '💎'
 };
-const NAV_EMOJI = { room: '🏠', closet: '👗', store: '🛍️' };
+const NAV_EMOJI = { room: '🏠', closet: '👗', store: '🛍️', games: '🎮', town: '🏘️' };
+
+// Per-scene config: where Back leads, what bg to show, what music plays.
+// Scenes not listed in SCENE_MUSIC_LIST and not in SILENT_SCENES inherit
+// the previous scene's music (current behaviour for closet).
+const BACK_TARGET = { closet: 'room', store: 'town', arcade: 'town', game: 'arcade' };
+const SCENE_BG = {
+  room:   'art/UI/room.png',
+  closet: 'art/UI/room.png',
+  store:  'art/UI/store.png',
+  town:   'art/UI/town.png',
+  game:   'art/UI/room.png',
+  // arcade: no entry → empty (dark) bg until art ships
+};
+const SCENE_MUSIC_LIST = { room: 'room', store: 'store' };
+const SILENT_SCENES = new Set(['town', 'arcade', 'game']);
 
 // Filenames live in config/music.js. Playback path is built per-scene
 // in playTrack() as `music/${scene}/${filename}`.
@@ -936,17 +1148,20 @@ const S = {
   storeSelected: null,
   closetCat: 'skin',
   storeCat: 'face',
+  activeGame: null,
+  gameInstance: null,
   musicList: 'room',
   musicIdx: 0,
   musicPlaying: false,
   name: '',
   lastDate: '',
+  cooldowns: {}, // { gameId: endAtMs } — set when player hits Start in a game
 };
 
 /* ═══════════════════════════════════════════
    PERSISTENCE — localStorage
 ═══════════════════════════════════════════ */
-const LS = { q:'dg2_q', a:'dg2_a', owned:'dg2_own', eq:'dg2_eq', name:'dg2_name', lastDate:'dg2_lastDate' };
+const LS = { q:'dg2_q', a:'dg2_a', owned:'dg2_own', eq:'dg2_eq', name:'dg2_name', lastDate:'dg2_lastDate', cooldowns:'dg2_cooldowns' };
 
 function persist() {
   try {
@@ -955,6 +1170,7 @@ function persist() {
     localStorage.setItem(LS.owned, JSON.stringify([...S.owned]));
     localStorage.setItem(LS.name, S.name);
     localStorage.setItem(LS.lastDate, S.lastDate || '');
+    localStorage.setItem(LS.cooldowns, JSON.stringify(S.cooldowns || {}));
     const obj = {};
     for (const [cat, set] of Object.entries(S.equipped)) obj[cat] = [...set];
     localStorage.setItem(LS.eq, JSON.stringify(obj));
@@ -982,16 +1198,59 @@ function loadState() {
     }
     const name = localStorage.getItem(LS.name); if (name) S.name = name;
     const lastDate = localStorage.getItem(LS.lastDate); if (lastDate != null) S.lastDate = lastDate;
+    const cd = localStorage.getItem(LS.cooldowns);
+    if (cd) { try { S.cooldowns = JSON.parse(cd) || {}; } catch(_) {} }
   } catch(_) {}
 }
 
 /* ── Device-local preferences (not part of save data, not exported) ── */
-const LSP = { music:'dg2_pref_music', vol:'dg2_pref_vol', sfx:'dg2_pref_sfx' };
+const LSP = { music:'dg2_pref_music', vol:'dg2_pref_vol', sfx:'dg2_pref_sfx', seenVersion:'dg2_pref_seen_version' };
+
 function loadPref(key, fallback) {
   try { const v = localStorage.getItem(key); return v == null ? fallback : v; } catch(_) { return fallback; }
 }
 function savePref(key, value) {
   try { localStorage.setItem(key, value); } catch(_) {}
+}
+
+/* ── Version helpers ── */
+function getVersion() {
+  const v = window.VERSION_CONFIG;
+  if (!v) return null;
+  return typeof v === 'string' ? v : (v.version || null);
+}
+function getUpdateMessage() {
+  const v = window.VERSION_CONFIG;
+  if (!v || typeof v === 'string') return '';
+  return v.update_message || '';
+}
+// Compare semver-style "a.b.c" strings. Returns >0 if a>b, <0 if a<b, 0 if equal.
+function compareVersions(a, b) {
+  const pa = String(a).split('.').map(n => parseInt(n, 10) || 0);
+  const pb = String(b).split('.').map(n => parseInt(n, 10) || 0);
+  const len = Math.max(pa.length, pb.length);
+  for (let i = 0; i < len; i++) {
+    const da = pa[i] || 0, db = pb[i] || 0;
+    if (da !== db) return da - db;
+  }
+  return 0;
+}
+
+/* ── Update notification ── */
+function showUpdateNotifIfNeeded() {
+  const v = getVersion();
+  if (!v) return;
+  const seen = loadPref(LSP.seenVersion, null);
+  // Trigger when no version is remembered, or current is strictly higher.
+  if (seen != null && compareVersions(v, seen) <= 0) return;
+  $('update-title').textContent = `New version ${v}!`;
+  $('update-text').textContent = getUpdateMessage();
+  $('update-notif').style.display = 'flex';
+}
+function closeUpdateNotif() {
+  const v = getVersion();
+  if (v) savePref(LSP.seenVersion, v);
+  $('update-notif').style.display = 'none';
 }
 
 /* ── Import / Export ── */
@@ -1007,6 +1266,7 @@ function exportPlayer() {
     owned: [...S.owned],
     equipped: Object.fromEntries(Object.entries(S.equipped).map(([k, v]) => [k, [...v]])),
     lastDate: S.lastDate,
+    cooldowns: S.cooldowns,
   };
   const blob = new Blob(
     ['window.PLAYER_CONFIG = ' + JSON.stringify(data, null, 2) + ';\n'],
@@ -1113,6 +1373,7 @@ function applyDefaultState() {
   if (sb) S.equipped.skin.add(sb);
   S.name = '';
   S.lastDate = '';
+  S.cooldowns = {};
 }
 
 function applyPlayerConfig(cfg) {
@@ -1127,6 +1388,7 @@ function applyPlayerConfig(cfg) {
   }
   S.name = cfg.name ?? '';
   S.lastDate = cfg.lastDate ?? '';
+  S.cooldowns = cfg.cooldowns ?? {};
   if (S.equipped.face.size === 0) {
     const fb = STARTERS.find(id => ITEMS.find(i => i.id === id && i.cat === 'face'));
     if (fb) S.equipped.face.add(fb);
@@ -1177,23 +1439,36 @@ function updateCurrency() {
 ═══════════════════════════════════════════ */
 function showScene(scene) {
   checkDailyReward();
-  const wasStore = S.scene === 'store';
+  const prevScene = S.scene;
+
+  // Tear down an active game when leaving the game scene
+  if (prevScene === 'game' && scene !== 'game' && S.gameInstance) {
+    S.gameInstance.cleanup();
+    S.gameInstance = null;
+    S.activeGame = null;
+  }
+
   S.scene = scene;
 
-  $('bg').style.backgroundImage = scene === 'store'
-    ? "url('art/UI/store.png')"
-    : "url('art/UI/room.png')";
+  const bgImg = SCENE_BG[scene];
+  $('bg').style.backgroundImage = bgImg ? `url('${bgImg}')` : '';
 
+  // Right-side scene panels
   $('closet-panel').classList.toggle('hidden', scene !== 'closet');
   $('store-panel').classList.toggle('hidden',  scene !== 'store');
-  $('timer-panel').classList.toggle('hidden', scene !== 'room');
+  $('game-panel').classList.toggle('hidden',   scene !== 'game');
+  $('timer-panel').classList.toggle('hidden',  scene !== 'room');
 
-  const nowStore = scene === 'store';
-  if (wasStore !== nowStore) {
-    const newList = nowStore ? 'store' : 'room';
-    if (S.musicPlaying) startMusic(newList);
-    else S.musicList = newList;
-  }
+  // World overlays (positioned over the bg, like the character)
+  $('town-stage').classList.toggle('hidden',   scene !== 'town');
+  $('arcade-stage').classList.toggle('hidden', scene !== 'arcade');
+  // Hide the character in scenes with no character
+  $('char-stage').classList.toggle('hidden',   scene === 'town' || scene === 'arcade');
+
+  applyMusicForScene(scene);
+
+  // Cooldown ticker only runs while the arcade is visible
+  if (prevScene === 'arcade' && scene !== 'arcade') stopCooldownTicker();
 
   renderNav();
 
@@ -1208,27 +1483,164 @@ function showScene(scene) {
     renderStoreGrid(S.storeCat);
     updateStoreFooter();
     updateStats();
+  } else if (scene === 'arcade') {
+    renderArcadeList();
+    startCooldownTicker();
   }
   renderCharacter();
+}
+
+function applyMusicForScene(scene) {
+  const newList = SCENE_MUSIC_LIST[scene];
+  const isSilent = SILENT_SCENES.has(scene);
+  const note = $('music-note');
+
+  if (isSilent) {
+    $('bgm').pause();
+    note.classList.add('paused');
+    return;
+  }
+  if (!newList) return; // closet etc.: inherit, leave music alone
+
+  if (S.musicList !== newList) {
+    S.musicList = newList;
+    if (S.musicPlaying) {
+      startMusic(newList);
+      note.classList.remove('paused');
+    } else {
+      note.classList.add('paused');
+    }
+  } else if (S.musicPlaying) {
+    const bgm = $('bgm');
+    if (bgm.paused) bgm.play().catch(() => {});
+    note.classList.remove('paused');
+  } else {
+    note.classList.add('paused');
+  }
 }
 
 function renderNav() {
   const nav = $('nav-area');
   nav.innerHTML = '';
-  const mk = (label, target) => {
+  const mk = (label, opts) => {
     const b = document.createElement('button');
     b.className = 'nav-btn';
-    b.textContent = (NAV_EMOJI[target] || '') + ' ' + label;
+    b.textContent = (opts.emoji || '') + ' ' + label;
     b.disabled = S.timerRunning;
-    b.onclick = () => showScene(target);
+    b.onclick = opts.onClick;
     nav.appendChild(b);
   };
   if (S.scene === 'room') {
-    mk('Store',  'store');
-    mk('Closet', 'closet');
+    mk('Town',   { emoji: NAV_EMOJI.town,   onClick: () => showScene('town') });
+    mk('Closet', { emoji: NAV_EMOJI.closet, onClick: () => showScene('closet') });
+  } else if (S.scene === 'town') {
+    // Navigation handled by the in-world Home/Store/Arcade buttons.
   } else {
-    mk('Room', 'room');
+    const target = BACK_TARGET[S.scene] || 'room';
+    mk('Back', { emoji: '←', onClick: () => showScene(target) });
   }
+}
+
+/* ═══════════════════════════════════════════
+   GAMES (lobby + lifecycle + cooldowns)
+═══════════════════════════════════════════ */
+const GAME_COOLDOWN_MS = 8 * 60 * 60 * 1000; // 8 hours
+
+function formatCooldown(ms) {
+  const total = Math.max(0, Math.ceil(ms / 1000));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  // Show only the two largest non-zero pieces.
+  if (h > 0) return `${h}h ${String(m).padStart(2,'0')}m`;
+  if (m > 0) return `${m}m ${String(s).padStart(2,'0')}s`;
+  return `${s}s`;
+}
+
+function renderArcadeList() {
+  const list = $('arcade-list');
+  list.innerHTML = '';
+  const now = Date.now();
+  for (const id in (window.GAMES || {})) {
+    const g = window.GAMES[id];
+    const endAt = (S.cooldowns && S.cooldowns[id]) || 0;
+    const onCooldown = endAt > now;
+    const card = document.createElement('button');
+    card.className = 'arcade-card';
+    if (onCooldown) {
+      card.disabled = true;
+    } else {
+      card.onclick = () => launchGame(g.id);
+    }
+    card.innerHTML =
+      `<span class="arcade-card-icon">${g.icon || '🎮'}</span>` +
+      `<span class="arcade-card-name">${g.name}</span>` +
+      (onCooldown
+        ? `<span class="arcade-card-cooldown" data-end-at="${endAt}">🔒 ${formatCooldown(endAt - now)}</span>`
+        : '');
+    list.appendChild(card);
+  }
+}
+
+let cooldownTickerId = null;
+function tickCooldownDisplays() {
+  const els = document.querySelectorAll('#arcade-list .arcade-card-cooldown');
+  if (els.length === 0) { stopCooldownTicker(); return; }
+  let needsRerender = false;
+  els.forEach(el => {
+    const remaining = (+el.dataset.endAt) - Date.now();
+    if (remaining <= 0) needsRerender = true;
+    else el.textContent = '🔒 ' + formatCooldown(remaining);
+  });
+  if (needsRerender) renderArcadeList();
+}
+function startCooldownTicker() {
+  stopCooldownTicker();
+  cooldownTickerId = setInterval(tickCooldownDisplays, 1000);
+}
+function stopCooldownTicker() {
+  if (cooldownTickerId) { clearInterval(cooldownTickerId); cooldownTickerId = null; }
+}
+
+function launchGame(gameId) {
+  const game = window.GAMES && window.GAMES[gameId];
+  if (!game) return;
+  // Defensive: refuse to enter if cooldown is somehow active
+  if (S.cooldowns && S.cooldowns[gameId] > Date.now()) return;
+  S.activeGame = gameId;
+  $('game-title').textContent = game.name;
+  $('game-host').innerHTML = '';
+  $('game-start-btn').style.display = '';
+  S.gameInstance = game.mount($('game-host'), {
+    end(reward) { onGameEnd(reward); },
+  });
+  showScene('game');
+}
+
+function onGameStart() {
+  if (!S.gameInstance) return;
+  // Cooldown begins the moment Start is pressed (per design),
+  // regardless of whether the player wins or abandons.
+  S.cooldowns[S.activeGame] = Date.now() + GAME_COOLDOWN_MS;
+  persist();
+  $('game-start-btn').style.display = 'none';
+  S.gameInstance.start();
+}
+
+// Set when a game-end popup is showing — `closeRewardPopup` consumes it
+// to send the player to that scene. (Other reward popups don't navigate.)
+let returnSceneOnRewardClose = null;
+
+function onGameEnd(reward) {
+  S.q += reward.q || 0;
+  S.a += reward.a || 0;
+  persist();
+  updateCurrency();
+  // No replay — Start stays hidden; closing the popup returns to Arcade,
+  // where the player can see the cooldown applied.
+  returnSceneOnRewardClose = 'arcade';
+  playJingle();
+  showRewardPopup('🏆 You won!', reward);
 }
 
 /* ═══════════════════════════════════════════
@@ -1536,8 +1948,12 @@ function toggleMusic() {
     $('music-note').classList.add('paused');
   } else {
     S.musicPlaying = true;
-    $('music-note').classList.remove('paused');
-    startMusic(S.musicList);
+    // Only actually start if the current scene has a playlist; otherwise
+    // the preference is saved and music starts on the next music scene.
+    if (SCENE_MUSIC_LIST[S.scene]) {
+      $('music-note').classList.remove('paused');
+      startMusic(S.musicList);
+    }
   }
   savePref(LSP.music, S.musicPlaying ? '1' : '0');
 }
@@ -1741,9 +2157,16 @@ function showRewardPopup(title, r) {
     `<div class="reward-line"><img src="art/UI/qua164.png" alt="quartz"> +${r.q}</div>`;
   if (r.a) lines.innerHTML +=
     `<div class="reward-line"><img src="art/UI/ame164.png" alt="amethyst"> +${r.a}</div>`;
-  const pop = $('reward-popup');
-  pop.classList.add('show');
-  setTimeout(() => pop.classList.remove('show'), 3400);
+  $('reward-modal').style.display = 'flex';
+}
+
+function closeRewardPopup() {
+  $('reward-modal').style.display = 'none';
+  if (returnSceneOnRewardClose) {
+    const target = returnSceneOnRewardClose;
+    returnSceneOnRewardClose = null;
+    showScene(target);
+  }
 }
 
 /* ═══════════════════════════════════════════
@@ -1757,6 +2180,17 @@ function todayStr() {
     String(d.getDate()).padStart(2, '0');
 }
 
+// Jingle uses the same #sfx element as the timer bell, so it respects
+// the notification-volume slider.
+function playJingle() {
+  try {
+    const sfx = $('sfx');
+    sfx.src = 'music/jingle.wav';
+    sfx.volume = +$('sfx-vol-slider').value;
+    sfx.play().catch(() => {});
+  } catch(_) {}
+}
+
 function checkDailyReward() {
   const today = todayStr();
   if (today <= (S.lastDate || '')) return;
@@ -1767,14 +2201,7 @@ function checkDailyReward() {
   S.lastDate = today;
   persist();
   updateCurrency();
-  // Jingle uses the same #sfx element as the timer bell, so it respects
-  // the notification-volume slider.
-  try {
-    const sfx = $('sfx');
-    sfx.src = 'music/jingle.wav';
-    sfx.volume = +$('sfx-vol-slider').value;
-    sfx.play().catch(() => {});
-  } catch(_) {}
+  playJingle();
   showRewardPopup('Daily reward!', r);
 }
 
@@ -1815,6 +2242,32 @@ function claimTabLock() {
 }
 
 /* ═══════════════════════════════════════════
+   ASSET PRELOAD
+═══════════════════════════════════════════ */
+// Resolve once every visual asset (UI image, every item PNG, fonts) has
+// finished loading — or failed. Errors resolve too, so a missing file can't
+// hang the loading screen forever.
+function preloadVisualAssets() {
+  const urls = [
+    'art/UI/room.png',
+    'art/UI/store.png',
+    'art/UI/qua164.png',
+    'art/UI/ame164.png',
+    'art/UI/avatar.png',
+  ];
+  ITEMS.forEach(item => urls.push(`art/${item.id}.png`));
+
+  const imgPromises = urls.map(url => new Promise(resolve => {
+    const img = new Image();
+    img.onload = img.onerror = resolve;
+    img.src = url;
+  }));
+  const fontPromise = (document.fonts && document.fonts.ready) || Promise.resolve();
+
+  return Promise.all([...imgPromises, fontPromise]);
+}
+
+/* ═══════════════════════════════════════════
    INIT
 ═══════════════════════════════════════════ */
 async function main() {
@@ -1844,6 +2297,10 @@ async function main() {
   $('save-btn').addEventListener('click', saveOutfit);
   $('clear-btn').addEventListener('click', clearDraft);
   $('buy-btn').addEventListener('click', buyItem);
+  $('game-start-btn').addEventListener('click', onGameStart);
+  $('town-home').addEventListener('click',   () => showScene('room'));
+  $('town-store').addEventListener('click',  () => showScene('store'));
+  $('town-arcade').addEventListener('click', () => showScene('arcade'));
 
   document.addEventListener('click', e => {
     if (e.target.closest('button')) playClick();
@@ -1917,12 +2374,19 @@ async function main() {
   document.addEventListener('click', resumeOnce);
   document.addEventListener('keydown', resumeOnce);
   $('bg').style.backgroundImage = "url('art/UI/room.png')";
-  if (window.VERSION_CONFIG) $('version-tag').textContent = 'v' + window.VERSION_CONFIG;
+  const ver = getVersion();
+  if (ver) $('version-tag').textContent = 'v' + ver;
+  showUpdateNotifIfNeeded();
   renderNav();
   renderCharacter();
   $('char-stage').addEventListener('click', e => {
     if (e.target.classList.contains('layer')) $('char-stage').classList.toggle('zoomed');
   });
+
+  // Wait for all visual assets (item PNGs, UI images, fonts) before
+  // revealing the game — prevents character/font/background pop-in.
+  await preloadVisualAssets();
+  $('loading-screen').classList.add('hidden');
 
   if (S.name) {
     $('player-name').textContent = S.name;
